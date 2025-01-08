@@ -3,6 +3,9 @@ import { Providers } from './providers';
 import { Inter } from 'next/font/google';
 import type { ReactNode } from 'react';
 import './globals.css';
+import { TestTube } from 'lucide-react';
+
+// gitignore 
 
 const inter = Inter({ subsets: ['latin'] });
 
