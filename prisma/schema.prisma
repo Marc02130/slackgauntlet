@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  profilePicture String?
+  status         String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  workspaces     WorkspaceUser[]
+  channels       ChannelUser[]
+  messages       Message[]
+}
+
+model Workspace {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  users       WorkspaceUser[]
+  channels    Channel[]
+}
+
+model WorkspaceUser {
+  id          String    @id @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  role        String    // 'ADMIN' or 'USER'
+  joinedAt    DateTime  @default(now())
+
+  @@unique([workspaceId, userId])
+}
+
+model Channel {
+  id          String        @id @default(cuid())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id])
+  workspaceId String
+  name        String
+  isPrivate   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  users       ChannelUser[]
+  messages    Message[]
+}
+
+model ChannelUser {
+  id        String   @id @default(cuid())
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  channelId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  joinedAt  DateTime @default(now())
+
+  @@unique([channelId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  channelId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  files     File[]
+}
+
+model File {
+  id        String   @id @default(cuid())
+  message   Message  @relation(fields: [messageId], references: [id])
+  messageId String
+  url       String
+  fileType  String
+  createdAt DateTime @default(now())
+} 
