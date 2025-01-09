@@ -21,6 +21,7 @@ model User {
   channels       ChannelUser[]
   messages       Message[]     // Messages sent by this user
   receivedMessages Message[]   @relation("MessageRecipient") // Messages received by this user
+  messageReads   MessageRead[]
 }
 
 model Channel {
@@ -69,6 +70,8 @@ model Message {
   replies     Message[] @relation("Replies")
   replyCount  Int       @default(0)
 
+  reads     MessageRead[]
+
   @@index([channelId])
   @@index([recipientId])
 }
@@ -80,4 +83,20 @@ model File {
   url       String
   fileType  String
   createdAt DateTime @default(now())
+}
+
+model MessageRead {
+  id        String   @id @default(cuid())
+  message   Message  @relation(fields: [messageId], references: [id])
+  messageId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  channelId String?  // null for direct messages
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messageId, userId])
+  @@index([userId, channelId])
+  @@index([userId, messageId])
 } 

@@ -119,6 +119,16 @@ export async function POST(
       return new NextResponse("Not a member of this channel", { status: 403 });
     }
 
+    // Get all channel members except the sender
+    const channelMembers = await db.channelUser.findMany({
+      where: {
+        channelId: params.channelId,
+        NOT: {
+          userId: dbUser.id
+        }
+      }
+    });
+
     // Create message first
     const message = await db.message.create({
       data: {
@@ -142,6 +152,18 @@ export async function POST(
         files: true
       }
     });
+
+    // Create message read records for all channel members except sender
+    if (channelMembers.length > 0) {
+      await db.messageRead.createMany({
+        data: channelMembers.map(member => ({
+          messageId: message.id,
+          userId: member.userId,
+          channelId: params.channelId,
+          read: false
+        }))
+      });
+    }
 
     return NextResponse.json(message);
   } catch (error) {

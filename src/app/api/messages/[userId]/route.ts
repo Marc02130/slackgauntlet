@@ -92,7 +92,7 @@ export async function POST(
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Create message with files
+    // Create message first
     const message = await db.message.create({
       data: {
         content: content || '',
@@ -113,6 +113,15 @@ export async function POST(
           }
         },
         files: true
+      }
+    });
+
+    // Create read record for the recipient
+    await db.messageRead.create({
+      data: {
+        messageId: message.id,
+        userId: params.userId,
+        read: false
       }
     });
 

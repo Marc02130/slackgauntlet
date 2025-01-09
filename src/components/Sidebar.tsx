@@ -32,6 +32,8 @@ export const Sidebar = () => {
     username: string;
     status: string | null;
   } | null>(null);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [dmUnreadCounts, setDmUnreadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,6 +84,47 @@ export const Sidebar = () => {
 
     if (userId) {
       fetchCurrentUser();
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    const fetchUnreadCounts = async () => {
+      try {
+        const response = await fetch('/api/channels/unread');
+        if (response.ok) {
+          const data = await response.json();
+          setUnreadCounts(data);
+        }
+      } catch (error) {
+        console.error('Error fetching unread counts:', error);
+      }
+    };
+
+    if (userId) {
+      fetchUnreadCounts();
+      // Poll for unread counts every 30 seconds
+      const interval = setInterval(fetchUnreadCounts, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    const fetchDMUnreadCounts = async () => {
+      try {
+        const response = await fetch('/api/direct-messages/unread');
+        if (response.ok) {
+          const data = await response.json();
+          setDmUnreadCounts(data);
+        }
+      } catch (error) {
+        console.error('Error fetching DM unread counts:', error);
+      }
+    };
+
+    if (userId) {
+      fetchDMUnreadCounts();
+      const interval = setInterval(fetchDMUnreadCounts, 30000);
+      return () => clearInterval(interval);
     }
   }, [userId]);
 
@@ -168,10 +211,17 @@ export const Sidebar = () => {
                 <Link
                   key={channel.id}
                   href={`/channels/${channel.id}`}
-                  className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded text-gray-300"
+                  className="flex items-center justify-between p-2 hover:bg-gray-700 rounded text-gray-300"
                 >
-                  <Hash size={16} />
-                  <span>{channel.name}</span>
+                  <div className="flex items-center gap-2">
+                    <Hash size={16} />
+                    <span>{channel.name}</span>
+                  </div>
+                  {unreadCounts[channel.id] > 0 && (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                      {unreadCounts[channel.id]}
+                    </span>
+                  )}
                 </Link>
               ))
             ) : (
@@ -199,20 +249,33 @@ export const Sidebar = () => {
                 <Link 
                   key={user.id}
                   href={`/messages/${user.id}`}
-                  className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded"
+                  className="flex items-center justify-between p-2 hover:bg-gray-700 rounded"
                 >
-                  {user.profilePicture ? (
-                    <img 
-                      src={user.profilePicture} 
-                      alt={user.username}
-                      className="w-6 h-6 rounded-full"
-                    />
-                  ) : (
-                    <MessageSquare size={16} />
-                  )}
-                  <span className="truncate">{user.username}</span>
-                  {user.status && (
-                    <span className="text-xs text-gray-400">• {user.status}</span>
+                  <div className="flex items-center gap-2">
+                    {user.profilePicture ? (
+                      <img 
+                        src={user.profilePicture} 
+                        alt={user.username}
+                        className="w-6 h-6 rounded-full"
+                      />
+                    ) : (
+                      <MessageSquare size={16} />
+                    )}
+                    <div className="flex items-center gap-1">
+                      <span className="truncate">{user.username}</span>
+                      {user.status && (
+                        <Circle
+                          size={8}
+                          fill={user.status === 'available' ? '#4ade80' : '#ef4444'}
+                          className={user.status === 'available' ? 'text-green-400' : 'text-red-400'}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  {dmUnreadCounts[user.id] > 0 && (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                      {dmUnreadCounts[user.id]}
+                    </span>
                   )}
                 </Link>
               ))

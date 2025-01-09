@@ -23,12 +23,16 @@ export default async function DirectMessagePage({ params }: { params: { userId: 
 
   return (
     <MainLayout>
-      <div className="flex-1 flex flex-col">
+      <div className="flex flex-col h-full">
         <div className="border-b px-4 py-2">
           <h1 className="text-xl font-semibold">{otherUser.username}</h1>
         </div>
-        <MessageList recipientId={params.userId} />
-        <DirectMessageInput />
+        <div className="flex-1 overflow-hidden">
+          <MessageList recipientId={params.userId} />
+        </div>
+        <div className="mt-auto border-t">
+          <DirectMessageInput />
+        </div>
       </div>
     </MainLayout>
   );
