@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { FileIcon, MessageCircle } from 'lucide-react';
 import { MessageThread } from './MessageThread';
 import { useInView } from 'react-intersection-observer';
+import { ChannelSearch, ChannelSearchRef } from './ChannelSearch';
 
 interface File {
   id: string;
@@ -42,6 +43,10 @@ export function MessageList({ channelId }: MessageListProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const { ref: bottomRef, inView: bottomInView } = useInView();
   const lastCheckedRef = useRef<Date>(new Date());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [filteredMessages, setFilteredMessages] = useState<Message[]>([]);
+  const searchRef = useRef<ChannelSearchRef>(null);
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -111,24 +116,62 @@ export function MessageList({ channelId }: MessageListProps) {
     }
   }, [bottomInView]);
 
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setIsSearching(!!term);
+    
+    if (term) {
+      const filtered = messages.filter(message => 
+        message.content.toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredMessages(filtered);
+    } else {
+      setFilteredMessages([]);
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchResultClick = async (messageId: string) => {
+    // Clear search input and states
+    searchRef.current?.clearSearch();
+    setSearchTerm('');
+    setIsSearching(false);
+    setFilteredMessages([]);
+
+    // Wait for next render cycle
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Scroll to message
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
-      if (isAtBottom) {
+      if (isAtBottom && !isSearching) {
         await fetchMessages();
         lastCheckedRef.current = new Date();
-      } else {
+      } else if (!isSearching) {
         await fetchUnreadCount();
       }
     };
 
-    // Initial fetch
     fetchData();
+    
+    let interval: NodeJS.Timeout;
+    if (!isSearching) {
+      interval = setInterval(fetchData, 10000);
+    }
 
-    // Set up polling interval
-    const interval = setInterval(fetchData, 10000);
-
-    return () => clearInterval(interval);
-  }, [channelId, isAtBottom]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [channelId, isAtBottom, isSearching]);
 
   useEffect(() => {
     const markChannelAsRead = async () => {
@@ -202,89 +245,138 @@ export function MessageList({ channelId }: MessageListProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col relative">
-      {!isAtBottom && unreadCount > 0 && (
-        <button
-          onClick={() => {
-            scrollToBottom();
-            markMessagesAsRead();
-          }}
-          className="absolute top-4 left-1/2 transform -translate-x-1/2 
+    <div className="flex flex-col h-full">
+      <ChannelSearch ref={searchRef} onSearch={handleSearch} />
+      <div className="flex-1 min-h-0 relative">
+        {!isAtBottom && unreadCount > 0 && !isSearching && (
+          <button
+            onClick={scrollToBottom}
+            className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10
                      bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg"
-        >
-          {unreadCount} new messages
-        </button>
-      )}
+          >
+            {unreadCount} new messages
+          </button>
+        )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ maxHeight: 'calc(100vh - 180px)' }}>
-        {messages.length === 0 ? (
-          <div className="text-center text-gray-500">No messages yet</div>
-        ) : (
-          messages.map((message) => (
-            <div key={message.id} className="flex items-start gap-3">
-              {message.user.profilePicture ? (
-                <img
-                  src={message.user.profilePicture}
-                  alt={message.user.username}
-                  className="w-8 h-8 rounded-full"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  {message.user.username[0]}
-                </div>
-              )}
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-semibold">{message.user.username}</span>
-                  <span className="text-xs text-gray-500">
-                    {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                  </span>
-                </div>
-                {message.content && (
-                  <p className="text-gray-700 mb-2">{message.content}</p>
-                )}
-                {message.files && message.files.length > 0 && (
-                  <div className="space-y-2">
-                    {message.files.map((file) => (
-                      <div key={file.id}>
-                        {renderFile(file)}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <button
-                  onClick={() => {
-                    setSelectedMessage(message);
-                    setIsThreadOpen(true);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+        <div className="absolute inset-0 overflow-y-auto p-4 space-y-4">
+          {isSearching ? (
+            filteredMessages.length > 0 ? (
+              filteredMessages.map((message) => (
+                <div
+                  key={message.id}
+                  id={`message-${message.id}`}
+                  onClick={() => handleSearchResultClick(message.id)}
+                  className="cursor-pointer hover:bg-gray-50"
                 >
-                  <MessageCircle size={16} />
-                  {message.replyCount > 0 && (
-                    <span className="text-xs">{message.replyCount}</span>
+                  <div className="flex items-start gap-3">
+                    {message.user.profilePicture ? (
+                      <img
+                        src={message.user.profilePicture}
+                        alt={message.user.username}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                        {message.user.username[0]}
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-semibold">{message.user.username}</span>
+                        <span className="text-xs text-gray-500">
+                          {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                      {message.content && (
+                        <p className="text-gray-700 mb-2">{message.content}</p>
+                      )}
+                      {message.files && message.files.length > 0 && (
+                        <div className="space-y-2">
+                          {message.files.map((file) => (
+                            <div key={file.id}>
+                              {renderFile(file)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        onClick={() => {
+                          setSelectedMessage(message);
+                          setIsThreadOpen(true);
+                        }}
+                        className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                      >
+                        <MessageCircle size={16} />
+                        {message.replyCount > 0 && (
+                          <span className="text-xs">{message.replyCount}</span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500">No messages found</div>
+            )
+          ) : (
+            messages.map((message) => (
+              <div key={message.id} id={`message-${message.id}`}>
+                <div className="flex items-start gap-3">
+                  {message.user.profilePicture ? (
+                    <img
+                      src={message.user.profilePicture}
+                      alt={message.user.username}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                      {message.user.username[0]}
+                    </div>
                   )}
-                </button>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-semibold">{message.user.username}</span>
+                      <span className="text-xs text-gray-500">
+                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                      </span>
+                    </div>
+                    {message.content && (
+                      <p className="text-gray-700 mb-2">{message.content}</p>
+                    )}
+                    {message.files && message.files.length > 0 && (
+                      <div className="space-y-2">
+                        {message.files.map((file) => (
+                          <div key={file.id}>
+                            {renderFile(file)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedMessage(message);
+                        setIsThreadOpen(true);
+                      }}
+                      className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                    >
+                      <MessageCircle size={16} />
+                      {message.replyCount > 0 && (
+                        <span className="text-xs">{message.replyCount}</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
-        )}
-        <div ref={messagesEndRef} />
-        {selectedMessage && (
-          <MessageThread
-            isOpen={isThreadOpen}
-            onClose={() => {
-              setIsThreadOpen(false);
-              setSelectedMessage(null);
-            }}
-            parentMessage={selectedMessage}
-            channelId={channelId}
-          />
-        )}
+            ))
+          )}
+          <div ref={bottomRef} />
+          <div ref={messagesEndRef} />
+        </div>
       </div>
-
-      <div ref={bottomRef} />
     </div>
   );
 } 

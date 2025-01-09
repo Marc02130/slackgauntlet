@@ -11,7 +11,7 @@ interface Thread {
   channelId: string;
   replyCount: number;
   user: {
-    name: string;
+    username: string;
     profilePicture?: string | null;
   };
   channel: {
@@ -73,17 +73,20 @@ export function ThreadsList() {
                 {thread.user.profilePicture ? (
                   <img
                     src={thread.user.profilePicture}
-                    alt={thread.user.name}
+                    alt={thread.user.username}
                     className="w-8 h-8 rounded-full"
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                    {thread.user.name[0]}
+                    {thread.user.username[0]}
                   </div>
                 )}
                 <div className="flex-1">
                   <div className="flex items-baseline gap-2">
-                    <span className="font-semibold">{thread.user.name}</span>
+                    <span className="font-semibold">{thread.user.username}</span>
+                    {thread.channel && (
+                      <span className="text-gray-500">in #{thread.channel.name}</span>
+                    )}
                     <span className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(thread.createdAt), { addSuffix: true })}
                     </span>

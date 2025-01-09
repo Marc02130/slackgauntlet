@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { FileIcon } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
+import { DirectMessageSearch, DirectMessageSearchRef } from './DirectMessageSearch';
 
 interface File {
   id: string;
@@ -36,6 +37,10 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const { ref: bottomRef, inView: bottomInView } = useInView();
   const lastCheckedRef = useRef<Date>(new Date());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [filteredMessages, setFilteredMessages] = useState<Message[]>([]);
+  const searchRef = useRef<DirectMessageSearchRef>(null);
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -99,10 +104,10 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (isAtBottom) {
+      if (isAtBottom && !isSearching) {
         await fetchMessages();
         lastCheckedRef.current = new Date();
-      } else {
+      } else if (!isSearching) {
         await fetchUnreadCount();
       }
     };
@@ -110,11 +115,16 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
     // Initial fetch
     fetchData();
 
-    // Set up polling interval
-    const interval = setInterval(fetchData, 10000);
+    // Set up polling interval only when not searching
+    let interval: NodeJS.Timeout;
+    if (!isSearching) {
+      interval = setInterval(fetchData, 10000);
+    }
 
-    return () => clearInterval(interval);
-  }, [recipientId, isAtBottom]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [recipientId, isAtBottom, isSearching]);
 
   useEffect(() => {
     if (messages.length > 0 && isAtBottom) {
@@ -148,6 +158,41 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
       markMessagesAsRead();
     }
   }, [recipientId]);
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setIsSearching(!!term);
+    
+    if (term) {
+      const filtered = messages.filter(message => 
+        message.content.toLowerCase().includes(term.toLowerCase())
+      );
+      setFilteredMessages(filtered);
+    } else {
+      setFilteredMessages([]);
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchResultClick = async (messageId: string) => {
+    // Clear search input and states
+    searchRef.current?.clearSearch();
+    setSearchTerm('');
+    setIsSearching(false);
+    setFilteredMessages([]);
+
+    // Wait for next render cycle
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Now scroll to message
+    const messageElement = document.getElementById(`message-${messageId}`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  };
 
   const renderFile = (file: File) => {
     const fileType = file.fileType.toLowerCase();
@@ -204,57 +249,102 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-180px)]">
-      <div className="relative flex-1">
-        {!isAtBottom && unreadCount > 0 && (
+    <div className="flex flex-col h-full">
+      <DirectMessageSearch ref={searchRef} onSearch={handleSearch} />
+      <div className="flex-1 min-h-0 relative">
+        {!isAtBottom && unreadCount > 0 && !isSearching && (
           <button
-            onClick={() => {
-              scrollToBottom();
-              markMessagesAsRead();
-            }}
+            onClick={scrollToBottom}
             className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10
-                       bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg"
+                     bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg"
           >
             {unreadCount} new messages
           </button>
         )}
 
         <div className="absolute inset-0 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center text-gray-500">No messages yet</div>
+          {isSearching ? (
+            filteredMessages.length > 0 ? (
+              filteredMessages.map((message) => (
+                <div
+                  key={message.id}
+                  id={`message-${message.id}`}
+                  onClick={() => handleSearchResultClick(message.id)}
+                  className="cursor-pointer hover:bg-gray-50"
+                >
+                  <div className="flex items-start gap-3">
+                    {message.user.profilePicture ? (
+                      <img
+                        src={message.user.profilePicture}
+                        alt={message.user.username}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                        {message.user.username[0]}
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-semibold">{message.user.username}</span>
+                        <span className="text-xs text-gray-500">
+                          {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                      {message.content && (
+                        <p className="text-gray-700 mb-2">{message.content}</p>
+                      )}
+                      {message.files && message.files.length > 0 && (
+                        <div className="space-y-2">
+                          {message.files.map((file) => (
+                            <div key={file.id}>
+                              {renderFile(file)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500">No messages found</div>
+            )
           ) : (
             messages.map((message) => (
-              <div key={message.id} className="flex items-start gap-3">
-                {message.user.profilePicture ? (
-                  <img
-                    src={message.user.profilePicture}
-                    alt={message.user.username}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                    {message.user.username[0]}
-                  </div>
-                )}
-                <div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-semibold">{message.user.username}</span>
-                    <span className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                    </span>
-                  </div>
-                  {message.content && (
-                    <p className="text-gray-700 mb-2">{message.content}</p>
-                  )}
-                  {message.files && message.files.length > 0 && (
-                    <div className="space-y-2">
-                      {message.files.map((file) => (
-                        <div key={file.id}>
-                          {renderFile(file)}
-                        </div>
-                      ))}
+              <div key={message.id} id={`message-${message.id}`}>
+                <div className="flex items-start gap-3">
+                  {message.user.profilePicture ? (
+                    <img
+                      src={message.user.profilePicture}
+                      alt={message.user.username}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                      {message.user.username[0]}
                     </div>
                   )}
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-semibold">{message.user.username}</span>
+                      <span className="text-xs text-gray-500">
+                        {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                      </span>
+                    </div>
+                    {message.content && (
+                      <p className="text-gray-700 mb-2">{message.content}</p>
+                    )}
+                    {message.files && message.files.length > 0 && (
+                      <div className="space-y-2">
+                        {message.files.map((file) => (
+                          <div key={file.id}>
+                            {renderFile(file)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))

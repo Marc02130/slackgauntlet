@@ -16,11 +16,13 @@ export default async function ChannelPage({ params }: { params: { channelId: str
 
   return (
     <MainLayout>
-      <div className="flex-1 flex flex-col">
+      <div className="flex flex-col h-[calc(100vh-3.5rem)]">
         <div className="border-b px-4 py-2">
           <h1 className="text-xl font-semibold">#{channel.name}</h1>
         </div>
-        <MessageList channelId={params.channelId} />
+        <div className="flex-1 min-h-0">
+          <MessageList channelId={params.channelId} />
+        </div>
         <MessageInput />
       </div>
     </MainLayout>
