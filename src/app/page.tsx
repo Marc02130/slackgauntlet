@@ -13,7 +13,7 @@ export default async function Home() {
     <MainLayout>
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold mb-4">Welcome to SlackGauntlet</h1>
-        <p>Select a workspace or channel to get started.</p>
+        <p>Select a channel or direct message to get started.</p>
       </div>
     </MainLayout>
   );

@@ -7,6 +7,7 @@ export default authMiddleware({
     "/api/webhook",
     "/sign-in",
     "/sign-up",
+    "/api/uploadthing",
   ],
 });
 
