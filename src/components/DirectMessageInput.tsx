@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Send, Paperclip } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useUploadThing } from "@/lib/hooks/useUploadThing";
+import { EmojiPicker } from './EmojiPicker';
 
 export function DirectMessageInput() {
   const [message, setMessage] = useState('');
@@ -12,28 +13,17 @@ export function DirectMessageInput() {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const params = useParams();
-  const { startUpload, isUploading } = useUploadThing("messageAttachment", {
-    onClientUploadComplete: (res) => {
-      console.log("Files uploaded successfully:", res);
-    },
-    onUploadError: (error) => {
-      console.error("Error uploading files:", error);
-    },
-    onUploadBegin: (fileName) => {
-      console.log("Upload starting for:", fileName);
-    },
-  });
+  const { startUpload } = useUploadThing("messageAttachment");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      console.log('Files selected:', selectedFiles.map(f => ({ 
-        name: f.name, 
-        type: f.type, 
-        size: f.size 
-      })));
       setFiles(selectedFiles);
     }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setMessage(prev => prev + emoji);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,9 +36,7 @@ export function DirectMessageInput() {
         let fileUrls: string[] = [];
         
         if (files.length > 0) {
-          console.log('Starting upload with UploadThing...');
           const uploadResult = await startUpload(files);
-          console.log('UploadThing response:', uploadResult);
           
           if (!uploadResult) {
             throw new Error("File upload failed");
@@ -56,7 +44,6 @@ export function DirectMessageInput() {
           fileUrls = uploadResult.map(file => file.url);
         }
 
-        console.log('Sending message with files to API...');
         const response = await fetch(`/api/messages/${params.userId}`, {
           method: 'POST',
           headers: {
@@ -70,12 +57,8 @@ export function DirectMessageInput() {
 
         if (!response.ok) {
           const errorData = await response.text();
-          console.error('API error response:', errorData);
           throw new Error(errorData || 'Failed to send message');
         }
-
-        const responseData = await response.json();
-        console.log('Message sent successfully:', responseData);
 
         setMessage('');
         setFiles([]);
@@ -83,7 +66,6 @@ export function DirectMessageInput() {
           fileInputRef.current.value = '';
         }
       } catch (error) {
-        console.error('Error in handleSubmit:', error);
         setError(error instanceof Error ? error.message : 'Failed to send message');
       } finally {
         setIsLoading(false);
@@ -112,6 +94,7 @@ export function DirectMessageInput() {
           >
             <Paperclip size={20} />
           </button>
+          <EmojiPicker onEmojiSelect={handleEmojiSelect} />
           <input
             type="file"
             ref={fileInputRef}

@@ -16,7 +16,7 @@ interface Message {
   createdAt: string;
   files: File[];
   user: {
-    name: string;
+    username: string;
     profilePicture?: string | null;
   };
 }
@@ -151,17 +151,17 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
             {message.user.profilePicture ? (
               <img
                 src={message.user.profilePicture}
-                alt={message.user.name}
+                alt={message.user.username}
                 className="w-8 h-8 rounded-full"
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                {message.user.name[0]}
+                {message.user.username[0]}
               </div>
             )}
             <div>
               <div className="flex items-baseline gap-2">
-                <span className="font-semibold">{message.user.name}</span>
+                <span className="font-semibold">{message.user.username}</span>
                 <span className="text-xs text-gray-500">
                   {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
                 </span>

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Send, Paperclip } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useUploadThing } from "@/lib/hooks/useUploadThing";
+import { EmojiPicker } from './EmojiPicker';
 
 export function MessageInput() {
   const [message, setMessage] = useState('');
@@ -68,6 +69,10 @@ export function MessageInput() {
     }
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    setMessage(prev => prev + emoji);
+  };
+
   return (
     <div className="border-t bg-white">
       {error && (
@@ -89,6 +94,7 @@ export function MessageInput() {
           >
             <Paperclip size={20} />
           </button>
+          <EmojiPicker onEmojiSelect={handleEmojiSelect} />
           <input
             type="file"
             ref={fileInputRef}

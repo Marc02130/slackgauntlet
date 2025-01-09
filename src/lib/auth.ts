@@ -1,13 +1,19 @@
-import { auth } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs";
 import { db } from "@/lib/db";
 
 export async function isAdmin() {
   const { userId } = auth();
+  const clerkUser = await currentUser();
   
-  if (!userId) return false;
+  if (!userId || !clerkUser) return false;
 
-  const user = await db.user.findUnique({
-    where: { id: userId },
+  const user = await db.user.findFirst({
+    where: {
+      OR: [
+        { id: userId },
+        { email: clerkUser.emailAddresses[0].emailAddress }
+      ]
+    },
     select: {
       id: true,
       userRole: true
@@ -19,18 +25,26 @@ export async function isAdmin() {
 
 export async function getCurrentUser() {
   const { userId } = auth();
+  const clerkUser = await currentUser();
   
-  if (!userId) return null;
+  if (!userId || !clerkUser) return null;
 
-  const user = await db.user.findUnique({
-    where: { id: userId },
+  const user = await db.user.findFirst({
+    where: {
+      OR: [
+        { id: userId },
+        { email: clerkUser.emailAddresses[0].emailAddress }
+      ]
+    },
     select: {
       id: true,
-      name: true,
+      username: true,
       email: true,
       userRole: true,
       profilePicture: true,
-      status: true
+      status: true,
+      firstName: true,
+      lastName: true
     }
   });
 

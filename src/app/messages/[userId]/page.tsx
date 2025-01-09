@@ -14,7 +14,7 @@ export default async function DirectMessagePage({ params }: { params: { userId: 
 
   const otherUser = await db.user.findUnique({
     where: { id: params.userId },
-    select: { name: true }
+    select: { username: true }
   });
 
   if (!otherUser) {
@@ -25,7 +25,7 @@ export default async function DirectMessagePage({ params }: { params: { userId: 
     <MainLayout>
       <div className="flex-1 flex flex-col">
         <div className="border-b px-4 py-2">
-          <h1 className="text-xl font-semibold">{otherUser.name}</h1>
+          <h1 className="text-xl font-semibold">{otherUser.username}</h1>
         </div>
         <MessageList recipientId={params.userId} />
         <DirectMessageInput />

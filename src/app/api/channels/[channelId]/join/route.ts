@@ -2,7 +2,10 @@ import { auth, currentUser } from "@clerk/nextjs";
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function POST(
+  req: Request,
+  { params }: { params: { channelId: string } }
+) {
   try {
     const { userId } = auth();
     const user = await currentUser();
@@ -24,24 +27,15 @@ export async function GET() {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Get all users except the current user
-    const users = await db.user.findMany({
-      where: {
-        NOT: {
-          id: dbUser.id
-        }
-      },
-      select: {
-        id: true,
-        username: true,
-        profilePicture: true
-      },
-      orderBy: {
-        username: 'asc'
+    // Add user to channel
+    await db.channelUser.create({
+      data: {
+        channelId: params.channelId,
+        userId: dbUser.id
       }
     });
 
-    return NextResponse.json(users);
+    return new NextResponse("Joined channel successfully");
   } catch (error) {
     return new NextResponse("Internal Error", { status: 500 });
   }

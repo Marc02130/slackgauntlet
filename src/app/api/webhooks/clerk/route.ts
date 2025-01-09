@@ -54,19 +54,22 @@ export async function POST(req: Request) {
 
   if (eventType === 'user.created' || eventType === 'user.updated') {
     try {
-      // Create or update user
       await db.user.upsert({
         where: { id: evt.data.id },
         create: {
           id: evt.data.id,
           email: evt.data.email_addresses[0].email_address,
-          name: `${evt.data.first_name || ''} ${evt.data.last_name || ''}`.trim(),
+          username: evt.data.username || `user${evt.data.id.slice(0, 8)}`,
+          firstName: evt.data.first_name,
+          lastName: evt.data.last_name,
           userRole: "USER",
           profilePicture: evt.data.image_url,
         },
         update: {
           email: evt.data.email_addresses[0].email_address,
-          name: `${evt.data.first_name || ''} ${evt.data.last_name || ''}`.trim(),
+          username: evt.data.username,
+          firstName: evt.data.first_name,
+          lastName: evt.data.last_name,
           profilePicture: evt.data.image_url,
         },
       });

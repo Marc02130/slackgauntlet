@@ -32,7 +32,8 @@ export async function GET() {
           {
             messages: {
               some: {
-                recipientId: dbUser.id
+                recipientId: dbUser.id,
+                channelId: null
               }
             }
           },
@@ -40,40 +41,40 @@ export async function GET() {
           {
             receivedMessages: {
               some: {
-                userId: dbUser.id
+                userId: dbUser.id,
+                channelId: null
               }
             }
           }
-        ],
-        // Exclude current user
-        NOT: {
-          id: dbUser.id
-        }
+        ]
       },
       select: {
         id: true,
-        name: true,
+        username: true,
         profilePicture: true,
         status: true,
         messages: {
           where: {
             OR: [
-              { userId: dbUser.id },
-              { recipientId: dbUser.id }
-            ]
+              {
+                userId: dbUser.id,
+                recipientId: { not: undefined }
+              },
+              {
+                recipientId: dbUser.id,
+                userId: { not: undefined }
+              }
+            ],
+            channelId: null
           },
           orderBy: {
             createdAt: 'desc'
           },
-          take: 1,
-          select: {
-            content: true,
-            createdAt: true
-          }
+          take: 1
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        username: 'asc'
       }
     });
 

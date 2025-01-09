@@ -42,22 +42,35 @@ export async function GET(
     const messages = await db.message.findMany({
       where: {
         channelId: params.channelId,
+        parentId: null, // Only fetch top-level messages
       },
       include: {
         user: {
           select: {
-            name: true,
+            username: true,
             profilePicture: true,
           }
         },
-        files: true
+        files: true,
+        _count: {
+          select: {
+            replies: true // Get reply count
+          }
+        }
       },
       orderBy: {
         createdAt: 'asc'
       }
     });
 
-    return NextResponse.json(messages);
+    // Transform the messages to include replyCount from _count
+    const transformedMessages = messages.map(message => ({
+      ...message,
+      replyCount: message._count.replies,
+      _count: undefined // Remove _count from the response
+    }));
+
+    return NextResponse.json(transformedMessages);
   } catch (error) {
     return new NextResponse("Internal Error", { status: 500 });
   }
@@ -122,7 +135,7 @@ export async function POST(
       include: {
         user: {
           select: {
-            name: true,
+            username: true,
             profilePicture: true,
           }
         },

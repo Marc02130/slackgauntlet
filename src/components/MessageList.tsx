@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { FileIcon } from 'lucide-react';
+import { FileIcon, MessageCircle } from 'lucide-react';
+import { MessageThread } from './MessageThread';
 
 interface File {
   id: string;
@@ -14,11 +15,13 @@ interface Message {
   id: string;
   content: string;
   createdAt: string;
+  channelId: string;
   files: File[];
   user: {
-    name: string;
+    username: string;
     profilePicture?: string | null;
   };
+  replyCount: number;
 }
 
 interface MessageListProps {
@@ -32,6 +35,8 @@ export function MessageList({ channelId }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingInterval = useRef<NodeJS.Timeout>();
   const lastMessagesRef = useRef<string>('');
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [isThreadOpen, setIsThreadOpen] = useState(false);
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -152,17 +157,17 @@ export function MessageList({ channelId }: MessageListProps) {
             {message.user.profilePicture ? (
               <img
                 src={message.user.profilePicture}
-                alt={message.user.name}
+                alt={message.user.username}
                 className="w-8 h-8 rounded-full"
               />
             ) : (
               <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                {message.user.name[0]}
+                {message.user.username[0]}
               </div>
             )}
             <div>
               <div className="flex items-baseline gap-2">
-                <span className="font-semibold">{message.user.name}</span>
+                <span className="font-semibold">{message.user.username}</span>
                 <span className="text-xs text-gray-500">
                   {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
                 </span>
@@ -180,10 +185,35 @@ export function MessageList({ channelId }: MessageListProps) {
                 </div>
               )}
             </div>
+            <div className="flex items-center gap-2 mt-2">
+              <button
+                onClick={() => {
+                  setSelectedMessage(message);
+                  setIsThreadOpen(true);
+                }}
+                className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+              >
+                <MessageCircle size={16} />
+                {message.replyCount > 0 && (
+                  <span className="text-xs">{message.replyCount}</span>
+                )}
+              </button>
+            </div>
           </div>
         ))
       )}
       <div ref={messagesEndRef} />
+      {selectedMessage && (
+        <MessageThread
+          isOpen={isThreadOpen}
+          onClose={() => {
+            setIsThreadOpen(false);
+            setSelectedMessage(null);
+          }}
+          parentMessage={selectedMessage}
+          channelId={channelId}
+        />
+      )}
     </div>
   );
 } 

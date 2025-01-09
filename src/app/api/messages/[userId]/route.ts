@@ -43,7 +43,7 @@ export async function GET(
       include: {
         user: {
           select: {
-            name: true,
+            username: true,
             profilePicture: true,
           }
         },
@@ -108,7 +108,7 @@ export async function POST(
       include: {
         user: {
           select: {
-            name: true,
+            username: true,
             profilePicture: true,
           }
         },

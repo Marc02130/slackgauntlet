@@ -11,26 +11,7 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const dbUser = await db.user.findFirst({
-      where: {
-        OR: [
-          { id: userId },
-          { email: user.emailAddresses[0].emailAddress }
-        ]
-      }
-    });
-
-    if (!dbUser) {
-      return new NextResponse("User not found", { status: 404 });
-    }
-
-    // Get all users except the current user
     const users = await db.user.findMany({
-      where: {
-        NOT: {
-          id: dbUser.id
-        }
-      },
       select: {
         id: true,
         username: true,
