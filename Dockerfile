@@ -1,31 +1,39 @@
-FROM node:18-alpine AS base
+FROM node:18-alpine
 
-# Dependencies
-FROM base AS deps
+# Install dependencies including OpenSSL
+RUN apk add --no-cache \
+    libc6-compat \
+    openssl \
+    openssl-dev
+
 WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
-RUN npm ci
+COPY prisma ./prisma/
 
-# Builder
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Install dependencies
+RUN npm install
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy the rest of the application
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED 1
+
+# Build the application
 RUN npm run build
 
-# Runner
-FROM base AS runner
-WORKDIR /app
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Set up the production structure
+RUN cp -r .next/static .next/standalone/.next/ && \
+    cp -r public .next/standalone/ && \
+    cp -r .next/standalone/* . && \
+    rm -rf .next/standalone
 
 EXPOSE 3000
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "server.js"] 
+# Create start script
+COPY scripts/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"] 

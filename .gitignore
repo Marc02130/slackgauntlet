@@ -2,3 +2,5 @@ node_modules
 .env.local
 .env
 .next
+backup.sql
+docker-compose.yml

@@ -26,13 +26,13 @@ export async function POST() {
       create: {
         id: existingUser?.id || userId,
         email: user.emailAddresses[0].emailAddress,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        username: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         userRole: "USER",
         profilePicture: user.imageUrl,
       },
       update: {
         email: user.emailAddresses[0].emailAddress,
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        username: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         profilePicture: user.imageUrl,
       },
     });
