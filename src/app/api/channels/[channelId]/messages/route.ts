@@ -107,18 +107,6 @@ export async function POST(
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Check if user is a member of the channel
-    const membership = await db.channelUser.findFirst({
-      where: {
-        channelId: params.channelId,
-        userId: dbUser.id
-      }
-    });
-
-    if (!membership) {
-      return new NextResponse("Not a member of this channel", { status: 403 });
-    }
-
     // Get all channel members except the sender
     const channelMembers = await db.channelUser.findMany({
       where: {
@@ -126,15 +114,18 @@ export async function POST(
         NOT: {
           userId: dbUser.id
         }
+      },
+      select: {
+        userId: true
       }
     });
 
-    // Create message first
+    // Create message with files
     const message = await db.message.create({
       data: {
         content: content || '',
-        channelId: params.channelId,
         userId: dbUser.id,
+        channelId: params.channelId,
         files: {
           create: fileUrls?.map((url: string) => ({
             url,
@@ -159,14 +150,14 @@ export async function POST(
         data: channelMembers.map(member => ({
           messageId: message.id,
           userId: member.userId,
-          channelId: params.channelId,
-          read: false
+          channelId: params.channelId
         }))
       });
     }
 
     return NextResponse.json(message);
   } catch (error) {
+    console.error("[MESSAGES_POST]", error);
     return new NextResponse(
       error instanceof Error ? error.message : "Internal Error", 
       { status: 500 }

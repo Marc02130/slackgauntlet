@@ -65,20 +65,24 @@ export function MessageList({ channelId }: MessageListProps) {
       const response = await fetch(`/api/channels/${channelId}/messages`);
       
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to fetch messages');
+        throw new Error('Failed to fetch messages');
       }
       
       const data = await response.json();
+      if (!data) {
+        setMessages([]);
+        return;
+      }
+
       const newMessagesString = JSON.stringify(data);
       
-      // Only update state if messages have changed
       if (newMessagesString !== lastMessagesRef.current) {
         setMessages(data);
         lastMessagesRef.current = newMessagesString;
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to fetch messages');
+      setMessages([]);
     } finally {
       setIsLoading(false);
     }
@@ -184,10 +188,10 @@ export function MessageList({ channelId }: MessageListProps) {
       }
     };
 
-    if (isAtBottom) {
+    if (channelId) {
       markChannelAsRead();
     }
-  }, [channelId, isAtBottom]);
+  }, [channelId]);
 
   const renderFile = (file: File) => {
     const fileType = file.fileType.toLowerCase();
@@ -320,7 +324,7 @@ export function MessageList({ channelId }: MessageListProps) {
             ) : (
               <div className="text-center text-gray-500">No messages found</div>
             )
-          ) : (
+          ) : messages.length > 0 ? (
             messages.map((message) => (
               <div key={message.id} id={`message-${message.id}`}>
                 <div className="flex items-start gap-3">
@@ -372,6 +376,8 @@ export function MessageList({ channelId }: MessageListProps) {
                 </div>
               </div>
             ))
+          ) : (
+            <div className="text-center text-gray-500">No messages yet</div>
           )}
           <div ref={bottomRef} />
           <div ref={messagesEndRef} />

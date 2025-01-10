@@ -24,24 +24,21 @@ export async function GET() {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Get unread counts for each channel
-    const unreadCounts = await db.messageRead.groupBy({
+    // Get unread counts grouped by channel
+    const unreadMessages = await db.messageRead.groupBy({
       by: ['channelId'],
       where: {
         userId: dbUser.id,
-        read: false,
         channelId: { not: null }
       },
-      _count: {
-        messageId: true
-      }
+      _count: true
     });
 
     // Transform to a map of channelId -> count
     const unreadMap = Object.fromEntries(
-      unreadCounts.map(({ channelId, _count }) => [
+      unreadMessages.map(({ channelId, _count }) => [
         channelId,
-        _count.messageId
+        _count
       ])
     );
 

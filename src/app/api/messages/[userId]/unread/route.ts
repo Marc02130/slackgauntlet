@@ -31,7 +31,6 @@ export async function GET(
     const count = await db.messageRead.count({
       where: {
         userId: dbUser.id,
-        read: false,
         message: {
           userId: params.userId,
           recipientId: dbUser.id

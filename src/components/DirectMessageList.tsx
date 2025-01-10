@@ -76,6 +76,8 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
         method: 'POST'
       });
       setUnreadCount(0);
+      const event = new CustomEvent('refreshUnreadCounts');
+      window.dispatchEvent(event);
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -106,7 +108,7 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
     const fetchData = async () => {
       if (isAtBottom && !isSearching) {
         await fetchMessages();
-        lastCheckedRef.current = new Date();
+        await markMessagesAsRead();
       } else if (!isSearching) {
         await fetchUnreadCount();
       }
@@ -115,9 +117,9 @@ export function MessageList({ recipientId }: DirectMessageListProps) {
     // Initial fetch
     fetchData();
 
-    // Set up polling interval only when not searching
+    // Only poll when at bottom and not searching
     let interval: NodeJS.Timeout;
-    if (!isSearching) {
+    if (isAtBottom && !isSearching) {
       interval = setInterval(fetchData, 10000);
     }
 

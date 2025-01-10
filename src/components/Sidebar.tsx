@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Home, Plus, Hash, MessageSquare, MessageCircle, User, Circle } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
@@ -87,46 +87,46 @@ export const Sidebar = () => {
     }
   }, [userId]);
 
-  useEffect(() => {
-    const fetchUnreadCounts = async () => {
-      try {
-        const response = await fetch('/api/channels/unread');
-        if (response.ok) {
-          const data = await response.json();
-          setUnreadCounts(data);
-        }
-      } catch (error) {
-        console.error('Error fetching unread counts:', error);
+  const fetchUnreadCounts = useCallback(async () => {
+    try {
+      const response = await fetch('/api/channels/unread');
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadCounts(data);
       }
-    };
-
-    if (userId) {
-      fetchUnreadCounts();
-      // Poll for unread counts every 30 seconds
-      const interval = setInterval(fetchUnreadCounts, 30000);
-      return () => clearInterval(interval);
+    } catch (error) {
+      console.error('Error fetching unread counts:', error);
     }
-  }, [userId]);
+  }, []);
+
+  const fetchDMUnreadCounts = useCallback(async () => {
+    try {
+      const response = await fetch('/api/direct-messages/unread');
+      if (response.ok) {
+        const data = await response.json();
+        setDmUnreadCounts(data);
+      }
+    } catch (error) {
+      console.error('Error fetching DM unread counts:', error);
+    }
+  }, []);
+
+  const handleRefreshCounts = useCallback(() => {
+    fetchUnreadCounts();
+    fetchDMUnreadCounts();
+  }, [fetchUnreadCounts, fetchDMUnreadCounts]);
 
   useEffect(() => {
-    const fetchDMUnreadCounts = async () => {
-      try {
-        const response = await fetch('/api/direct-messages/unread');
-        if (response.ok) {
-          const data = await response.json();
-          setDmUnreadCounts(data);
-        }
-      } catch (error) {
-        console.error('Error fetching DM unread counts:', error);
-      }
-    };
+    window.addEventListener('refreshUnreadCounts', handleRefreshCounts);
+    return () => window.removeEventListener('refreshUnreadCounts', handleRefreshCounts);
+  }, [handleRefreshCounts]);
 
+  // Initial fetch of unread counts
+  useEffect(() => {
     if (userId) {
-      fetchDMUnreadCounts();
-      const interval = setInterval(fetchDMUnreadCounts, 30000);
-      return () => clearInterval(interval);
+      handleRefreshCounts();
     }
-  }, [userId]);
+  }, [userId, handleRefreshCounts]);
 
   const toggleStatus = async () => {
     if (!currentUser) return;

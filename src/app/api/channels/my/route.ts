@@ -24,40 +24,25 @@ export async function GET() {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Get non-private channels that the user is not a member of
-    const availableChannels = await db.channel.findMany({
+    const channels = await db.channel.findMany({
       where: {
-        isPrivate: false,
         users: {
-          none: {
+          some: {
             userId: dbUser.id
           }
         }
       },
-      select: {
-        id: true,
-        name: true,
-        isPrivate: true,
-        _count: {
-          select: {
-            users: true
+      include: {
+        users: {
+          include: {
+            user: true
           }
         }
-      },
-      orderBy: {
-        name: 'asc'
       }
     });
 
-    // Return channels directly without transformation
-    return NextResponse.json(availableChannels.map(channel => ({
-      id: channel.id,
-      name: channel.name,
-      isPrivate: channel.isPrivate,
-      memberCount: channel._count.users
-    })));
+    return NextResponse.json(channels);
   } catch (error) {
-    console.error('Error in available channels:', error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

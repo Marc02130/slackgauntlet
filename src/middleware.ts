@@ -1,14 +1,18 @@
 import { authMiddleware } from "@clerk/nextjs";
 
 export default authMiddleware({
-  // Public routes that don't require authentication
   publicRoutes: [
     "/",
-    "/api/webhook",
+    "/api/webhooks/clerk",
+    "/api/webhooks/clerk/test",
     "/sign-in",
     "/sign-up",
-    "/api/uploadthing",
+    "/api/uploadthing"
   ],
+  ignoredRoutes: [
+    "/api/webhooks/clerk",
+    "/api/webhooks/clerk/(.*)"
+  ]
 });
 
 export const config = {

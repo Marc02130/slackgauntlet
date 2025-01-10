@@ -92,7 +92,6 @@ model MessageRead {
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   channelId String?  // null for direct messages
-  read      Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

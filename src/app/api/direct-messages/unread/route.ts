@@ -24,11 +24,10 @@ export async function GET() {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Get unread counts for each sender
+    // Get unread messages grouped by sender
     const unreadMessages = await db.messageRead.findMany({
       where: {
         userId: dbUser.id,
-        read: false,
         channelId: null
       },
       include: {
@@ -43,13 +42,36 @@ export async function GET() {
     // Count messages by sender
     const unreadMap: Record<string, number> = {};
     unreadMessages.forEach(msg => {
-      if (msg.message.userId) {
+      if (msg.message?.userId) {  // Add null check
         unreadMap[msg.message.userId] = (unreadMap[msg.message.userId] || 0) + 1;
+      }
+    });
+
+    // Get all users who have sent messages to the current user
+    const senders = await db.user.findMany({
+      where: {
+        messages: {
+          some: {
+            recipientId: dbUser.id,
+            channelId: null
+          }
+        }
+      },
+      select: {
+        id: true
+      }
+    });
+
+    // Initialize counts for all senders
+    senders.forEach(sender => {
+      if (!(sender.id in unreadMap)) {
+        unreadMap[sender.id] = 0;
       }
     });
 
     return NextResponse.json(unreadMap);
   } catch (error) {
+    console.error("[DIRECT_MESSAGES_UNREAD_GET]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 } 

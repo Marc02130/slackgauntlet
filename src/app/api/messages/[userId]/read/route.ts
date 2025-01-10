@@ -27,18 +27,14 @@ export async function POST(
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Mark all messages from this sender as read
-    await db.messageRead.updateMany({
+    // Delete all message read records for this conversation
+    await db.messageRead.deleteMany({
       where: {
         userId: dbUser.id,
-        read: false,
         message: {
           userId: params.userId,
           recipientId: dbUser.id
         }
-      },
-      data: {
-        read: true
       }
     });
 

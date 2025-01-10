@@ -116,12 +116,11 @@ export async function POST(
       }
     });
 
-    // Create read record for the recipient
+    // Create read record for the recipient without the read field
     await db.messageRead.create({
       data: {
         messageId: message.id,
-        userId: params.userId,
-        read: false
+        userId: params.userId
       }
     });
 
