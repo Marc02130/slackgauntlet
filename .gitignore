@@ -6,3 +6,4 @@ backup.sql
 docker-compose.yml
 scripts/
 *.tar
+*.tar.gz
