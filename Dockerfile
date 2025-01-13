@@ -1,21 +1,28 @@
-FROM node:18-alpine
+# Use Debian-based Node image explicitly
+FROM node:18-bullseye-slim
 
-# Install dependencies including OpenSSL
-RUN apk add --no-cache \
-    libc6-compat \
-    openssl \
-    openssl-dev
-
+# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY prisma ./prisma/
+# Install OpenSSL 1.1 and dependencies
+RUN apt-get update -y && \
+    apt-get install -y openssl ca-certificates wget netcat-traditional && \
+    wget https://ftp.debian.org/debian/pool/main/o/openssl/libssl1.1_1.1.1w-0+deb11u1_amd64.deb && \
+    dpkg -i libssl1.1_1.1.1w-0+deb11u1_amd64.deb && \
+    rm libssl1.1_1.1.1w-0+deb11u1_amd64.deb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install dependencies first (for better caching)
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
-# Generate Prisma client
+# Copy prisma schema
+COPY prisma ./prisma/
+
+# Generate Prisma Client
 RUN npx prisma generate
 
 # Copy the rest of the application
@@ -24,16 +31,25 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Set up the production structure
-RUN cp -r .next/static .next/standalone/.next/ && \
-    cp -r public .next/standalone/ && \
-    cp -r .next/standalone/* . && \
-    rm -rf .next/standalone
+# Set up the standalone build
+RUN cp -r .next/static .next/standalone/.next/static && \
+    cp -r public .next/standalone/public
 
+# Create startup script
+RUN echo '#!/bin/sh\n\
+echo "Waiting for database..."\n\
+while ! nc -z db 5432; do\n\
+  sleep 1\n\
+done\n\
+echo "Creating fresh database schema..."\n\
+npx prisma db push --accept-data-loss\n\
+echo "Starting application..."\n\
+cd .next/standalone && \
+node server.js' > /app/start.sh && \
+chmod +x /app/start.sh
+
+# Expose port
 EXPOSE 3000
 
-# Create start script
-COPY scripts/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
+# Start the application
 CMD ["/app/start.sh"] 

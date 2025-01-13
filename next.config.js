@@ -2,9 +2,8 @@
 const nextConfig = {
   output: 'standalone',
   experimental: {
-    serverActions: true,
+    outputFileTracingRoot: undefined,
   },
-  distDir: '.next'
 }
 
 module.exports = nextConfig 
