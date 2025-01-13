@@ -1,0 +1,16 @@
+# Large files
+*.tar
+*.tar.gz
+*.zip
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo 
+
+# Git
+.gitignore
+
+# Docker
+# .dockerignore
