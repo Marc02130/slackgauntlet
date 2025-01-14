@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# SSH into EC2 and start containers
+# SSH into EC2 and stop containers
 ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 '
   # Stop any running containers
   docker-compose down
@@ -13,8 +13,6 @@ ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 '
   rm -f slackgauntlet-app.tar
   rm -f slackgauntlet-db.tar
 '
-# Stop any running containers
-docker-compose down
 
 # Create a temporary build directory
 mkdir -p build_context
