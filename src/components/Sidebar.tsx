@@ -6,6 +6,8 @@ import { Home, Plus, Hash, MessageSquare, MessageCircle, User, Circle } from 'lu
 import { useAuth } from '@clerk/nextjs';
 import { UserSelectDialog } from './UserSelectDialog';
 import { ChannelCreateDialog } from './ChannelCreateDialog';
+import { StatusManager } from './StatusManager';
+import { ErrorBoundary } from './ErrorBoundary';
 
 interface Channel {
   id: string;
@@ -31,6 +33,8 @@ export const Sidebar = () => {
   const [currentUser, setCurrentUser] = useState<{
     username: string;
     status: string | null;
+    statusMessage: string | null;
+    useAIResponse: boolean;
   } | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [dmUnreadCounts, setDmUnreadCounts] = useState<Record<string, number>>({});
@@ -128,21 +132,26 @@ export const Sidebar = () => {
     }
   }, [userId, handleRefreshCounts]);
 
-  const toggleStatus = async () => {
-    if (!currentUser) return;
-    
-    const newStatus = currentUser.status === 'available' ? 'busy' : 'available';
-    
+  const handleStatusUpdate = async (data: {
+    status: string;
+    statusMessage?: string;
+    useAIResponse: boolean;
+  }) => {
     try {
       const response = await fetch('/api/users/me/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(data),
       });
 
-      if (response.ok) {
-        setCurrentUser(prev => prev ? { ...prev, status: newStatus } : null);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Status update failed:', result.error);
+        return;
       }
+
+      setCurrentUser(result);
     } catch (error) {
       console.error('Error updating status:', error);
     }
@@ -166,17 +175,14 @@ export const Sidebar = () => {
             <User size={20} className="text-gray-400" />
             <div className="flex-1">
               <div className="font-medium">{currentUser?.username}</div>
-              <button
-                onClick={toggleStatus}
-                className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-300"
-              >
-                <Circle
-                  size={8}
-                  fill={currentUser?.status === 'available' ? '#4ade80' : '#ef4444'}
-                  className={currentUser?.status === 'available' ? 'text-green-400' : 'text-red-400'}
+              <ErrorBoundary>
+                <StatusManager
+                  currentStatus={currentUser?.status || null}
+                  statusMessage={currentUser?.statusMessage || null}
+                  useAIResponse={currentUser?.useAIResponse || false}
+                  onUpdate={handleStatusUpdate}
                 />
-                {currentUser?.status || 'Set status'}
-              </button>
+              </ErrorBoundary>
             </div>
           </div>
         </div>

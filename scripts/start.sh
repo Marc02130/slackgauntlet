@@ -7,7 +7,7 @@ ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 '
   
   # Remove all containers and volumes
   docker system prune -af
-  docker volume prune -f
+  docker volume prune -af
   
   # remove the tar files
   rm -f slackgauntlet-app.tar

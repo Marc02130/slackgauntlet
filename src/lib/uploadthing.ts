@@ -5,7 +5,9 @@ const f = createUploadthing();
 
 const handleAuth = async () => {
   const { userId } = auth();
-  if (!userId) throw new Error("Unauthorized");
+  if (!userId && !process.env.UPLOADTHING_SECRET) {
+    throw new Error("Unauthorized");
+  }
   return { userId };
 };
  
@@ -17,8 +19,11 @@ export const ourFileRouter = {
     video: { maxFileSize: "16MB" },
     audio: { maxFileSize: "8MB" },
   })
-    .middleware(async () => {
+    .middleware(async ({ req }) => {
       const auth = await handleAuth();
+      if (req.headers.get("x-uploadthing-webhook")) {
+        return { userId: "webhook" };
+      }
       return auth;
     })
     .onUploadComplete(async ({ metadata, file }) => {

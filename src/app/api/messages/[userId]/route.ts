@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs";
 import { db } from "@/lib/db";
+import { embeddingsManager } from "@/lib/embeddings-manager";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -123,6 +124,19 @@ export async function POST(
         userId: params.userId
       }
     });
+
+    // Generate embedding for the message
+    await embeddingsManager.generateMessageEmbedding(
+      message.content,
+      {
+        userId: dbUser.id,
+        messageId: message.id,
+        username: dbUser.username,
+        type: 'message',
+        threadId: message.parentId,
+        channelId: message.channelId
+      }
+    );
 
     return NextResponse.json(message);
   } catch (error) {

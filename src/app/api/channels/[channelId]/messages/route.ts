@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs";
 import { db } from "@/lib/db";
+import { embeddingsManager } from "@/lib/embeddings-manager";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -88,7 +89,7 @@ export async function POST(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { content, fileUrls } = await req.json();
+    const { content, fileUrls, parentId } = await req.json();
 
     if (!content?.trim() && (!fileUrls || fileUrls.length === 0)) {
       return new NextResponse("Message content or files are required", { status: 400 });
@@ -126,6 +127,7 @@ export async function POST(
         content: content || '',
         userId: dbUser.id,
         channelId: params.channelId,
+        parentId,
         files: {
           create: fileUrls?.map((url: string) => ({
             url,
@@ -143,6 +145,19 @@ export async function POST(
         files: true
       }
     });
+
+    // Generate embedding for the channel message
+    await embeddingsManager.generateMessageEmbedding(
+      content,
+      {
+        userId: dbUser.id,
+        messageId: message.id,
+        username: dbUser.username,
+        type: 'message',
+        channelId: params.channelId,
+        threadId: parentId || undefined
+      }
+    );
 
     // Create message read records for all channel members except sender
     if (channelMembers.length > 0) {

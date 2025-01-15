@@ -1,19 +1,11 @@
-# SlackGauntlet Automatic Response
+# SlackGauntlet AI Response Requirements
 
 1. User Status Management
-   - Implement automatic chat response for users with "busy" status
-   - Allow users to set custom away messages
-   - Allow users to choose automatic response or custom message response when busy
-   - Support scheduled busy periods
-   - Track user activity to auto-detect availability
+   - Implement AI response using RAG for users that are BUSY
+   - Allow users to set static custom away messages
+   - Allow users to choose AI response or static custom message response when BUSY
 
-2. Message History Processing
-   - Retrieve busy user's previous responses
-   - Analyze response patterns and styles
-   - Collect contextual information from conversations
-   - Store message history with metadata (time, context, sentiment)
-
-3. Embedding Generation
+2. Embedding Generation
    - Calculate embeddings for:
      * User's previous responses
      * Similar messages from other users
@@ -22,14 +14,14 @@
    - Update embeddings periodically
    - Handle multiple languages
 
-4. Vector Database Management
-   - Store embeddings efficiently
+3. Vector Database Management
+   - Store embeddings efficiently using Pinecone
    - Implement fast similarity search
    - Regular maintenance and cleanup
    - Version control for embeddings
    - Backup and recovery procedures
 
-5. Response Generation
+4. Response Generation
    - Find most similar historical messages
    - Consider conversation context
    - Maintain user's writing style
@@ -41,21 +33,23 @@
    - Support message threading
    - Include relevant attachments/links
 
-6. Quality Control
+5. Quality Control
    - Confidence scoring for responses
    - Human review for low-confidence responses
    - Feedback collection and incorporation
    - Response appropriateness checking
    - Sensitive content filtering
 
-7. Response Delivery
+6. Response Delivery
+   - Automatic reponses will be indicated in the response
+   - Custom away messages will be indicated in the response
    - Send responses with appropriate timing
    - Handle message threading correctly
    - Support rich text formatting
    - Include relevant context
    - Proper error handling
 
-10. Integration Features
+7. Integration Features
     - API endpoints for external systems
     - Webhook support
     - Custom integration options

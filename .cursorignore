@@ -2,6 +2,7 @@
 *.tar
 *.tar.gz
 *.zip
+init-scripts/init.sql
 
 # IDE files
 .vscode/

@@ -8,13 +8,13 @@ export async function PATCH(req: Request) {
     const user = await currentUser();
 
     if (!userId || !user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { status } = await req.json();
+    const { status, statusMessage, useAIResponse } = await req.json();
 
     if (!status || !['available', 'busy'].includes(status)) {
-      return new NextResponse("Invalid status", { status: 400 });
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
     const dbUser = await db.user.findFirst({
@@ -27,16 +27,20 @@ export async function PATCH(req: Request) {
     });
 
     if (!dbUser) {
-      return new NextResponse("User not found", { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const updatedUser = await db.user.update({
       where: { id: dbUser.id },
-      data: { status }
+      data: { 
+        status,
+        statusMessage: status === 'busy' ? statusMessage : null,
+        useAIResponse: status === 'busy' ? useAIResponse : false
+      }
     });
 
     return NextResponse.json(updatedUser);
   } catch (error) {
-    return new NextResponse("Internal Error", { status: 500 });
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 } 
