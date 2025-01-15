@@ -1,0 +1,25 @@
+1. Initial Requirements Prompt:
+    - "As an experienced technical product manager and thinking this through step by step, list the technical requirements..."
+    + "As a technical product manager, break down the AI proofreading feature into detailed technical requirements. Include:
+    + - User interaction flow
+    + - Technical components needed
+    + - Integration points
+    + - Performance considerations
+    + - Security requirements"
+
+2. Implementation Review Prompt:
+    - "Thinking this through step by step as a node, react, and prisma expert and considering the application design, make suggestions..."
+    + "Review the AI proofreading requirements as a full-stack expert. Specifically evaluate:
+    + - Schema design completeness
+    + - API endpoint coverage
+    + - Component architecture
+    + - State management approach
+    + - Performance considerations"
+
+3. Error Analysis Prompts:
+    - "There is an error added in context, as a prisma expert..."
+    + "Analyze this Prisma error:
+    + 1. What is the root cause?
+    + 2. What are potential fixes?
+    + 3. How to prevent similar issues?
+    + Include code examples for the solution."

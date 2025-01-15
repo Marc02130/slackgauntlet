@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["debian-openssl-1.1.x"]
+  binaryTargets = ["debian-openssl-1.1.x", "debian-openssl-3.0.x"]
   engineType    = "binary"
 }
 
@@ -26,6 +26,7 @@ model User {
   messages       Message[]     // Messages sent by this user
   receivedMessages Message[]   @relation("MessageRecipient") // Messages received by this user
   messageReads   MessageRead[]
+  aiProofingSettings AIProofingSettings?
 }
 
 model Channel {
@@ -104,4 +105,25 @@ model MessageRead {
   @@unique([messageId, userId])
   @@index([userId, channelId])
   @@index([userId, messageId])
+}
+
+model AIProofingSettings {
+  id                String   @id @default(cuid())
+  user              User     @relation(fields: [userId], references: [id])
+  userId            String   @unique
+  proofBeforeSend   Boolean  @default(false)
+  proofAfterSend    Boolean  @default(false)
+  autoAcceptChanges Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Proofing preferences
+  checkGrammar      Boolean  @default(true)
+  checkTone        Boolean  @default(true)
+  checkClarity     Boolean  @default(true)
+  checkSensitivity Boolean  @default(true)
+  
+  // Tone preferences
+  preferredTone    String?  // e.g., "professional", "casual", "friendly"
+  formality       Int      @default(5) // Scale of 1-10
 } 

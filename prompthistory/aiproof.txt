@@ -1,0 +1,43 @@
+I want to implement AI proof reading of messages before they are sent. As an experienced technical product  manager and thinking this through step by step, list the technical requirements in prose for implementing this in slackgauntlet.
+Chat - worked well
+
+Thinking this through step by step as a node, react, and prisma expert and considering the application design, make suggestions for edits to aiproof.md - requirements for implementing ai proof reading of messages in slackgauntlet 
+Chat - worked well
+
+Thinking this through step by step as a node, react, and prisma expert and considering the application design, implement 1. User Settings in aiproof.md 
+Composer - did not make the UI accessible
+
+There is an error added in context, as a prisma expert and thinking about this the carefully while considering the application design, find the root cause of the error and suggest fixes.
+Composer - fixed the bug, ssh version mismatch - prisma required a lower version.
+
+Thinking this through step by step as a node, react, and prisma expert and considering the application design, there is no access to the UI created for ai proof 1. User Settings, make the UI for 1. User Settings accessible by adding a tab to the update status popup 
+Composer - bug in pop up tab
+
+Thinking this through step by step as a node, react, and prisma expert and considering the application design, analyze the error message displayed when the user selects the AI Proofing tab in the User Status popup. The error message is "Failed to load settings"
+Composer - fixed the component by adding error handling for null/initial state value. Created a react-error-boundary error.
+
+Thinking this through step by step as a react expert and considering the application design, analyze the error message from the console and suggest a fix
+Composer - react-error-boundary was not installed.
+
+Thinking this through step by step as a node, react, and prisma expert and considering the application design, analyze the error message added in context. There is an error message displayed when the user selects the AI Proofing tab in the User Status popup. The error message in the tab is "Failed to load settings"
+Composer - Fixed the error, css is wrong - text is the same color as the background
+
+as a prompt engineering expert, review the prompte, source (chat or composer), and result.  Suggest improvements to the prompts. (aiprompt.md in context)
+Chat - response pasted in to aiproof_suggestedimprovements.txt
+
+Analyze this UI css error: the text and background are too similar in user status pop up AI proofing. There was a similar issue with the status tab when that was created
+    1. What is the root cause?
+    2. What are potential fixes?
+    3. How to prevent similar issues?
+Composer -fixed the issue, added a theme to the project to prevent it from happening again.
+
+There are issue with the status popup. when the popup loses focus, it is not hidden. there is no save button on the ai proofing tab.
+    1. What is the root cause?
+    2. What are potential fixes?
+    3. How to prevent similar issues?
+Composer - Added save button, added hiding on lost focus for popups
+
+There are issue with the status popup. when the popup loses focus, it is not hidden. there is no save button on the ai proofing tab.
+    1. What is the root cause?
+    2. What are potential fixes?
+    3. How to prevent similar issues?

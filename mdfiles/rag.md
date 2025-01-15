@@ -36,8 +36,7 @@
    - Include relevant attachments/links
 
 5. Quality Control
-   - Confidence scoring for responses
-   - Human review for low-confidence responses
+   - Using summary lookup, check if the response is appropriate
    - Feedback collection and incorporation
    - Response appropriateness checking
    - Sensitive content filtering

@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:setup": "prisma generate && prisma migrate deploy"
   },
   "dependencies": {
     "@clerk/nextjs": "^4.29.9",
@@ -23,6 +24,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
+    "react-error-boundary": "^5.0.0",
     "react-intersection-observer": "^9.14.1",
     "socket.io": "^4.7.2",
     "svix": "^1.45.1",
