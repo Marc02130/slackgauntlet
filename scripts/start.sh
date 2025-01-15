@@ -14,6 +14,10 @@ ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 '
   rm -f slackgauntlet-db.tar
 '
 
+# Create init-scripts directory and copy SQL file
+ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 'mkdir -p init-scripts'
+scp -i ~/.ssh/MB.pem init-scripts/init.sql ec2-user@3.236.117.93:/home/ec2-user/init-scripts/
+
 # Create a temporary build directory
 mkdir -p build_context
 cp package.json package-lock.json build_context/
@@ -45,10 +49,6 @@ scp -i ~/.ssh/MB.pem slackgauntlet-db.tar ec2-user@3.236.117.93:/home/ec2-user/
 scp -i ~/.ssh/MB.pem docker-compose.yml ec2-user@3.236.117.93:/home/ec2-user/
 scp -i ~/.ssh/MB.pem .env.local ec2-user@3.236.117.93:/home/ec2-user/
 
-# Create init-scripts directory and copy SQL file
-# ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 'mkdir -p init-scripts'
-# scp -i ~/.ssh/MB.pem init-scripts/init.sql ec2-user@3.236.117.93:/home/ec2-user/init-scripts/
-
 # SSH into EC2 and start containers
 ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 '
   # Load the images
@@ -56,7 +56,16 @@ ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 '
   docker load < slackgauntlet-app.tar || echo "Failed to load app image"
 
   # Start the containers
-  docker-compose up -d
+  docker-compose up -d db
+
+  # Wait for database to be ready
+  echo "Waiting for database to be ready..."
+  until docker-compose exec -T db pg_isready -U slackgauntlet -d slackgauntlet; do
+    echo "Database is unavailable - sleeping"
+    sleep 2
+  done
+  echo "Database is ready!"
+  docker-compose up -d app
 '
 
 # Clean up build directory

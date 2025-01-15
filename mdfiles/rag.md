@@ -21,7 +21,9 @@
    - Version control for embeddings
    - Backup and recovery procedures
 
-4. Response Generation
+4. Response Generation for Direct Messages
+   - If receiving user is busy, has a custom message, and has AI response disable, use that message
+   - If receiving user is busy and has AI response enabled, use AI response
    - Find most similar historical messages
    - Consider conversation context
    - Maintain user's writing style
