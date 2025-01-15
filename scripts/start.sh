@@ -54,18 +54,6 @@ ssh -i ~/.ssh/MB.pem ec2-user@3.236.117.93 '
   # Load the images
   docker load < slackgauntlet-db.tar
   docker load < slackgauntlet-app.tar || echo "Failed to load app image"
-
-  # Start the containers
-  docker-compose up -d db
-
-  # Wait for database to be ready
-  echo "Waiting for database to be ready..."
-  until docker-compose exec -T db pg_isready -U slackgauntlet -d slackgauntlet; do
-    echo "Database is unavailable - sleeping"
-    sleep 2
-  done
-  echo "Database is ready!"
-  docker-compose up -d app
 '
 
 # Clean up build directory

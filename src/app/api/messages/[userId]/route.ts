@@ -126,10 +126,6 @@ export async function POST(
       }
     });
 
-    // Dispatch event to refresh unread counts
-    const event = new CustomEvent('refreshUnreadCounts');
-    window.dispatchEvent(event);
-
     // Generate embedding for the message
     await embeddingsManager.generateMessageEmbedding(
       message.content,

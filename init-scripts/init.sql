@@ -5,7 +5,6 @@
 -- Dumped from database version 16.6 (Ubuntu 16.6-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.6 (Ubuntu 16.6-0ubuntu0.24.04.1)
 
-SET session_replication_role = 'replica';
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -27,6 +26,7 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO public;
 GRANT ALL ON SCHEMA public TO slackgauntlet;
 
+
 ALTER SCHEMA public OWNER TO slackgauntlet;
 
 SET default_tablespace = '';
@@ -36,18 +36,6 @@ SET default_table_access_method = heap;
 --
 -- Name: Channel; Type: TABLE; Schema: public; Owner: slackgauntlet
 --
-
-SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND query LIKE '%Channel%';
-SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND query LIKE '%ChannelUser%';
-SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND query LIKE '%File%';
-SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND query LIKE '%Message%';
-SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND query LIKE '%MessageRead%';
-SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND query LIKE '%User%';
-SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle' AND query LIKE '%_prisma_migrations%';
-
-DROP TABLE IF EXISTS "ChannelUser", "File", "MessageRead", "_prisma_migrations" CASCADE;
-DROP TABLE IF EXISTS "Channel", "User" CASCADE;
-DROP TABLE IF EXISTS "Message" CASCADE;
 
 CREATE TABLE public."Channel" (
     id text NOT NULL,
@@ -151,7 +139,7 @@ ALTER TABLE public."User" OWNER TO slackgauntlet;
 -- Name: _prisma_migrations; Type: TABLE; Schema: public; Owner: slackgauntlet
 --
 
-CREATE TABLE public."_prisma_migrations" (
+CREATE TABLE public._prisma_migrations (
     id character varying(36) NOT NULL,
     checksum character varying(64) NOT NULL,
     finished_at timestamp with time zone,
@@ -164,22 +152,6 @@ CREATE TABLE public."_prisma_migrations" (
 
 
 ALTER TABLE public._prisma_migrations OWNER TO slackgauntlet;
-
-
-
---
--- Data for Name: User; Type: TABLE DATA; Schema: public; Owner: slackgauntlet
---
-
-COPY public."User" (id, username, "firstName", "lastName", email, "profilePicture", "userRole", "createdAt", "updatedAt", status, "statusMessage", "useAIResponse") FROM stdin;
-cm5wcl72500023euyb67ri0aj	ducko	Duck	One	sneer-chip-running@duck.com	\N	USER	2025-01-14 10:46:23.742	2025-01-14 11:21:38.304	\N	\N	f
-cm5wcl72600033euyoz4hsvqn	duckt	Duck	Two	handling-nag-duvet@duck.com	\N	USER	2025-01-14 10:46:23.742	2025-01-14 11:21:38.305	\N	\N	f
-cm5wcp81a00053euyt3p32nhe	marcai	Marc	Gai	marc.breneiser@gauntletai.com	\N	USER	2025-01-14 10:49:31.63	2025-01-14 20:39:26.845	available	\N	f
-cm5wcp81900043euykpvmf9pf	marcg	Marc	B	marc.breneiser@gmail.com	\N	USER	2025-01-14 10:49:31.63	2025-01-14 20:57:18.98	available	\N	f
-cm5wcp81a00063euywix6zte8	billw	Bill	Williams	ridden-keep-robin@duck.com	\N	USER	2025-01-14 10:49:31.63	2025-01-15 02:52:26.789	busy		t
-\.
-
-
 
 --
 -- Data for Name: Channel; Type: TABLE DATA; Schema: public; Owner: slackgauntlet
@@ -204,6 +176,19 @@ cm5wd0ign00063eucpoj7gplu	cm5wd0ign00003euc9t8mukj9	cm5wcp81900043euykpvmf9pf	20
 cm5wgbes000023emsqmye7p4r	cm5wgbes000003ems4aeblqp1	cm5wcp81a00063euywix6zte8	2025-01-14 12:30:45.648
 cm5wgbes000033emsfn7bir8o	cm5wgbes000003ems4aeblqp1	cm5wcp81a00053euyt3p32nhe	2025-01-14 12:30:45.648
 cm5wgbes000043ems46o3a2bh	cm5wgbes000003ems4aeblqp1	cm5wcp81900043euykpvmf9pf	2025-01-14 12:30:45.648
+\.
+
+
+--
+-- Data for Name: File; Type: TABLE DATA; Schema: public; Owner: slackgauntlet
+--
+
+COPY public."File" (id, "messageId", url, "fileType", "createdAt") FROM stdin;
+cm5x02vgw00023e7lslfj6p4y	cm5x02vgw00013e7lttaj1re3	https://utfs.io/f/776e27ea-02c6-4c9d-88d9-9135878d0711-4n443s.png	png	2025-01-14 21:43:59.696
+cm5x06mcl00073e7lxrzzmw0t	cm5x06mcl00063e7lkmzihju5	https://utfs.io/f/d0b4b4af-134f-4130-96ae-091816e6975e-7vrju8.png	png	2025-01-14 21:46:54.501
+cm5x4nhqy00023ewra3h317pa	cm5x4nhqy00013ewrdasrkmld	https://utfs.io/f/845948f8-43b4-4e56-9365-a294e043ef85-q1fsof.png	png	2025-01-14 23:52:00.154
+cm5x8p6ix00023e7u4ginbow7	cm5x8p6ix00013e7utqbwhhm6	https://utfs.io/f/0435b656-c82d-44d8-a2ff-03bb4bbe2464-m26sw9.png	png	2025-01-15 01:45:17.385
+cm5xa1p5o00023eixflo70kat	cm5xa1p5o00013eix6rogvx9m	https://utfs.io/f/034dfc7d-a022-4fbb-b857-7be0fae8fcff-kqfbhg.png	png	2025-01-15 02:23:01.021
 \.
 
 
@@ -307,15 +292,15 @@ cm5xbltlz00153epsdkpgulz5	cm5xblsrf00113epskm4m9sjr	cm5wcp81a00053euyt3p32nhe	cm
 
 
 --
--- Data for Name: File; Type: TABLE DATA; Schema: public; Owner: slackgauntlet
+-- Data for Name: User; Type: TABLE DATA; Schema: public; Owner: slackgauntlet
 --
 
-COPY public."File" (id, "messageId", url, "fileType", "createdAt") FROM stdin;
-cm5x02vgw00023e7lslfj6p4y	cm5x02vgw00013e7lttaj1re3	https://utfs.io/f/776e27ea-02c6-4c9d-88d9-9135878d0711-4n443s.png	png	2025-01-14 21:43:59.696
-cm5x06mcl00073e7lxrzzmw0t	cm5x06mcl00063e7lkmzihju5	https://utfs.io/f/d0b4b4af-134f-4130-96ae-091816e6975e-7vrju8.png	png	2025-01-14 21:46:54.501
-cm5x4nhqy00023ewra3h317pa	cm5x4nhqy00013ewrdasrkmld	https://utfs.io/f/845948f8-43b4-4e56-9365-a294e043ef85-q1fsof.png	png	2025-01-14 23:52:00.154
-cm5x8p6ix00023e7u4ginbow7	cm5x8p6ix00013e7utqbwhhm6	https://utfs.io/f/0435b656-c82d-44d8-a2ff-03bb4bbe2464-m26sw9.png	png	2025-01-15 01:45:17.385
-cm5xa1p5o00023eixflo70kat	cm5xa1p5o00013eix6rogvx9m	https://utfs.io/f/034dfc7d-a022-4fbb-b857-7be0fae8fcff-kqfbhg.png	png	2025-01-15 02:23:01.021
+COPY public."User" (id, username, "firstName", "lastName", email, "profilePicture", "userRole", "createdAt", "updatedAt", status, "statusMessage", "useAIResponse") FROM stdin;
+cm5wcl72500023euyb67ri0aj	ducko	Duck	One	sneer-chip-running@duck.com	\N	USER	2025-01-14 10:46:23.742	2025-01-14 11:21:38.304	\N	\N	f
+cm5wcl72600033euyoz4hsvqn	duckt	Duck	Two	handling-nag-duvet@duck.com	\N	USER	2025-01-14 10:46:23.742	2025-01-14 11:21:38.305	\N	\N	f
+cm5wcp81a00053euyt3p32nhe	marcai	Marc	Gai	marc.breneiser@gauntletai.com	\N	USER	2025-01-14 10:49:31.63	2025-01-14 20:39:26.845	available	\N	f
+cm5wcp81900043euykpvmf9pf	marcg	Marc	B	marc.breneiser@gmail.com	\N	USER	2025-01-14 10:49:31.63	2025-01-14 20:57:18.98	available	\N	f
+cm5wcp81a00063euywix6zte8	billw	Bill	Williams	ridden-keep-robin@duck.com	\N	USER	2025-01-14 10:49:31.63	2025-01-15 02:52:26.789	busy		t
 \.
 
 
@@ -524,7 +509,6 @@ ALTER TABLE ONLY public."Message"
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 
-SET session_replication_role = 'origin';
 
 --
 -- PostgreSQL database dump complete
