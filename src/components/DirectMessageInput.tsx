@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Send, Paperclip } from 'lucide-react';
+import { Send, Paperclip, Bot } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useUploadThing } from "@/lib/hooks/useUploadThing";
 import { EmojiPicker } from './EmojiPicker';
@@ -9,6 +9,7 @@ import { EmojiPicker } from './EmojiPicker';
 export function DirectMessageInput() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isProofing, setIsProofing] = useState(false);
   const [error, setError] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,19 +74,43 @@ export function DirectMessageInput() {
     }
   };
 
+  const handleProofread = async () => {
+    if (!message.trim()) return;
+    
+    try {
+      setIsProofing(true);
+      setError('');
+      
+      const response = await fetch('/api/messages/proofread', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          content: message,
+          userId: params.userId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to proofread message');
+      }
+
+      const { suggested } = await response.json();
+      setMessage(suggested);
+    } catch (error) {
+      setError('Failed to proofread message');
+      console.error('Proofread error:', error);
+    } finally {
+      setIsProofing(false);
+    }
+  };
+
   return (
-    <div className="border-t bg-white">
-      {error && (
-        <div className="p-2 text-sm text-red-500 bg-red-50">
-          {error}
-        </div>
-      )}
-      <form onSubmit={handleSubmit} className="p-4">
-        {files.length > 0 && (
-          <div className="mb-2 text-sm text-gray-600">
-            Selected files: {files.map(f => f.name).join(', ')}
-          </div>
+    <div className="p-4 border-t">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="text-sm text-red-500">{error}</div>
         )}
+        
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -94,7 +119,20 @@ export function DirectMessageInput() {
           >
             <Paperclip size={20} />
           </button>
+          
           <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+          
+          <button
+            type="button"
+            onClick={handleProofread}
+            disabled={isProofing || !message.trim()}
+            className={`p-2 text-gray-500 hover:text-gray-700 disabled:opacity-50 ${
+              isProofing ? 'animate-spin' : ''
+            }`}
+          >
+            <Bot size={20} />
+          </button>
+
           <input
             type="file"
             ref={fileInputRef}
@@ -103,6 +141,7 @@ export function DirectMessageInput() {
             accept="image/*,.pdf,text/*,video/*,audio/*"
             className="hidden"
           />
+          
           <input
             type="text"
             value={message}
@@ -111,6 +150,7 @@ export function DirectMessageInput() {
             disabled={isLoading}
             className="flex-1 rounded-md border border-gray-300 p-2 focus:outline-none focus:border-blue-500"
           />
+          
           <button
             type="submit"
             disabled={isLoading || (!message.trim() && files.length === 0)}

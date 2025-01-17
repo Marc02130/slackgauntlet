@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Circle, MessageSquare, Bot, Settings } from 'lucide-react';
+import { Circle, MessageSquare, Bot, Settings, MessageCircle } from 'lucide-react';
 import { AIProofingSettings } from './AIProofingSettings';
 import { ErrorBoundary } from './ErrorBoundary';
 
@@ -85,18 +85,19 @@ export function StatusManager({
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >
+          <MessageCircle size={16} className="inline mr-2" />
           Status
         </button>
         <button
           onClick={() => setActiveTab('aiProofing')}
-          className={`px-4 py-2 flex items-center gap-2 ${
+          className={`px-4 py-2 ${
             activeTab === 'aiProofing' 
               ? 'border-b-2 border-blue-500 text-blue-500' 
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >
-          <Bot size={16} />
-          AI Proofing
+          <Bot size={16} className="inline mr-2" />
+          AI Settings
         </button>
       </div>
 
@@ -178,7 +179,6 @@ export function StatusManager({
             <AIProofingSettings 
               onSaveSuccess={() => {
                 setIsOpen(false);
-                // Optionally show a success toast/notification
               }} 
             />
           </ErrorBoundary>

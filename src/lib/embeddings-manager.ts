@@ -7,8 +7,8 @@ export class EmbeddingsManager {
 
   constructor() {
     this.embeddings = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_KEY,
-      modelName: "text-embedding-3-large",
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: process.env.OPENAI_EMBEDDING_MODEL,
       stripNewLines: true,
     });
   }

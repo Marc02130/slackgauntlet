@@ -9,9 +9,13 @@ init-scripts/init.sql
 .idea/
 *.swp
 *.swo 
+prompthistory/
 
 # Git
 .gitignore
 
 # Docker
 # .dockerignore
+
+# env files
+.env.local

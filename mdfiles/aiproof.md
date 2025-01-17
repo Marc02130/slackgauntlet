@@ -7,9 +7,21 @@
 2. Message modification
     - Messages modified by the AI are displayed in a different color than the original message
     - The changes made by the AI are displayed in a different color than the original message
-    - The user can accept or reject the changes made by the AI
-    - The user can edit the changes made by the AI
-    - The user can cancel the proof reading process
+    - The user can accept or reject changes made by AI
+    - The user can edit changes made by the AI
+    - After send changes made by the AI are not editable by the user
+    - The ai generates proofed messages by:
+        - Using the pinecone vector database
+        - Find most similar historical messages
+        - Consider conversation context
+        - Maintain user's writing style
+        - Handle different types of queries:
+            * Questions
+            * Task requests
+            * Information sharing
+            * Social interactions
+        - Support message threading
+        - Include relevant attachments/links
 
 3. Prisma Schema Updates
     - Add AIProofing model for tracking proofing sessions

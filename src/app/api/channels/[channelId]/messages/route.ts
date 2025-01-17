@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs";
 import { db } from "@/lib/db";
 import { embeddingsManager } from "@/lib/embeddings-manager";
 import { NextResponse } from "next/server";
+import { handleMessageSend } from '@/lib/message-middleware';
 
 export async function GET(
   req: Request,
@@ -82,6 +83,7 @@ export async function POST(
   { params }: { params: { channelId: string } }
 ) {
   try {
+    console.log('Channel message POST started');
     const { userId } = auth();
     const user = await currentUser();
 
@@ -89,18 +91,10 @@ export async function POST(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { content, fileUrls, parentId } = await req.json();
-
-    if (!content?.trim() && (!fileUrls || fileUrls.length === 0)) {
-      return new NextResponse("Message content or files are required", { status: 400 });
-    }
-
+    // Find database user by email
     const dbUser = await db.user.findFirst({
       where: {
-        OR: [
-          { id: userId },
-          { email: user.emailAddresses[0].emailAddress }
-        ]
+        email: user.emailAddresses[0].emailAddress
       }
     });
 
@@ -108,26 +102,29 @@ export async function POST(
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Get all channel members except the sender
-    const channelMembers = await db.channelUser.findMany({
-      where: {
-        channelId: params.channelId,
-        NOT: {
-          userId: dbUser.id
-        }
-      },
-      select: {
-        userId: true
-      }
+    const { content, fileUrls } = await req.json();
+    const channelId = params.channelId;
+
+    if (!content?.trim() && (!fileUrls || fileUrls.length === 0)) {
+      return new NextResponse("Message content or files are required", { status: 400 });
+    }
+
+    // Process message through middleware
+    const processedMessage = await handleMessageSend({
+      content,
+      userId: dbUser.id, // Use database userId here
+      channelId
     });
 
-    // Create message with files
+    console.log('Processed message:', processedMessage);
+
+    // Create message with files relation
     const message = await db.message.create({
       data: {
-        content: content || '',
-        userId: dbUser.id,
-        channelId: params.channelId,
-        parentId,
+        content: processedMessage.content,
+        userId: dbUser.id, // Use database userId here
+        channelId,
+        isAIResponse: processedMessage.isAIResponse || false,
         files: {
           create: fileUrls?.map((url: string) => ({
             url,
@@ -146,36 +143,9 @@ export async function POST(
       }
     });
 
-    // Generate embedding for the channel message
-    await embeddingsManager.generateMessageEmbedding(
-      content,
-      {
-        userId: dbUser.id,
-        messageId: message.id,
-        username: dbUser.username,
-        type: 'message',
-        channelId: params.channelId,
-        threadId: parentId || undefined
-      }
-    );
-
-    // Create message read records for all channel members except sender
-    if (channelMembers.length > 0) {
-      await db.messageRead.createMany({
-        data: channelMembers.map(member => ({
-          messageId: message.id,
-          userId: member.userId,
-          channelId: params.channelId
-        }))
-      });
-    }
-
     return NextResponse.json(message);
   } catch (error) {
-    console.error("[MESSAGES_POST]", error);
-    return new NextResponse(
-      error instanceof Error ? error.message : "Internal Error", 
-      { status: 500 }
-    );
+    console.error('[MESSAGES_POST]', error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 } 

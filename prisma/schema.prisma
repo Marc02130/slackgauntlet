@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+  binaryTargets = ["native"]
   engineType    = "binary"
 }
 
@@ -111,8 +111,7 @@ model AIProofingSettings {
   id                String   @id @default(cuid())
   user              User     @relation(fields: [userId], references: [id])
   userId            String   @unique
-  proofBeforeSend   Boolean  @default(false)
-  proofAfterSend    Boolean  @default(false)
+  proofingMode      String   @default("none")
   autoAcceptChanges Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

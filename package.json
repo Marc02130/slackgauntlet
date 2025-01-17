@@ -13,11 +13,11 @@
     "@clerk/nextjs": "^4.29.9",
     "@clerk/types": "^4.40.2",
     "@langchain/openai": "^0.3.17",
+    "@langchain/core": "^0.3.29",
     "@pinecone-database/pinecone": "^4.1.0",
     "@prisma/client": "^4.16.2",
     "@uploadthing/react": "^6.0.2",
     "date-fns": "^4.1.0",
-    "langchain": "^0.3.11",
     "lucide-react": "^0.303.0",
     "next": "14.0.4",
     "ngrok": "^5.0.0-beta.2",
@@ -31,6 +31,7 @@
     "uploadthing": "^6.1.0"
   },
   "devDependencies": {
+    "@types/node": "^22.10.7",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.16",

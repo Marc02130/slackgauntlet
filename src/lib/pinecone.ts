@@ -13,7 +13,7 @@ if (!process.env.PINECONE_INDEX_NAME) {
   throw new Error('Missing Pinecone index name');
 }
 
-if (!process.env.OPENAI_KEY) {
+if (!process.env.OPENAI_API_KEY) {
   throw new Error('Missing OpenAI API key');
 }
 
@@ -24,8 +24,8 @@ const pinecone = new Pinecone({
 
 // Initialize OpenAI embeddings
 const embeddings = new OpenAIEmbeddings({
-  openAIApiKey: process.env.OPENAI_KEY,
-  modelName: "text-embedding-3-large"
+  openAIApiKey: process.env.OPENAI_API_KEY,
+  modelName: process.env.OPENAI_EMBEDDING_MODEL
 });
 
 // Get Pinecone index

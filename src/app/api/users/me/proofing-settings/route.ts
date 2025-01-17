@@ -30,32 +30,20 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({
-      id: settings?.id,
+    // Return default settings if none exist
+    return NextResponse.json(settings || {
       userId: dbUser.id,
-      proofBeforeSend: settings?.proofBeforeSend ?? false,
-      proofAfterSend: settings?.proofAfterSend ?? false,
-      autoAcceptChanges: settings?.autoAcceptChanges ?? false,
-      checkGrammar: settings?.checkGrammar ?? true,
-      checkTone: settings?.checkTone ?? true,
-      checkClarity: settings?.checkClarity ?? true,
-      checkSensitivity: settings?.checkSensitivity ?? true,
-      preferredTone: settings?.preferredTone ?? 'professional',
-      formality: settings?.formality ?? 5,
-      createdAt: settings?.createdAt ?? new Date(),
-      updatedAt: settings?.updatedAt ?? new Date()
+      proofingMode: "none",
+      autoAcceptChanges: false,
+      checkGrammar: true,
+      checkTone: true,
+      checkClarity: true,
+      checkSensitivity: true,
+      preferredTone: "professional",
+      formality: 5
     });
   } catch (error) {
     console.error('Error in GET /api/users/me/proofing-settings:', error);
-    if (error?.code === 'P2021') {
-      return new NextResponse(
-        JSON.stringify({
-          error: "Database setup required. Please run migrations.",
-          details: error.message
-        }),
-        { status: 500 }
-      );
-    }
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
@@ -83,7 +71,26 @@ export async function PUT(req: Request) {
     }
 
     const settings = await req.json();
-    console.log('Updating settings for user:', dbUser.id, settings);
+    
+    // Validate proofingMode
+    if (!['after', 'none'].includes(settings.proofingMode)) {
+      return new NextResponse(
+        JSON.stringify({ error: "Invalid proofing mode" }), 
+        { status: 400 }
+      );
+    }
+
+    // Create the settings data object
+    const settingsData = {
+      proofingMode: settings.proofingMode,
+      autoAcceptChanges: Boolean(settings.autoAcceptChanges),
+      checkGrammar: Boolean(settings.checkGrammar),
+      checkTone: Boolean(settings.checkTone),
+      checkClarity: Boolean(settings.checkClarity),
+      checkSensitivity: Boolean(settings.checkSensitivity),
+      preferredTone: settings.preferredTone || 'professional',
+      formality: Number(settings.formality) || 5
+    };
 
     const updatedSettings = await db.aIProofingSettings.upsert({
       where: {
@@ -91,9 +98,9 @@ export async function PUT(req: Request) {
       },
       create: {
         userId: dbUser.id,
-        ...settings
+        ...settingsData
       },
-      update: settings
+      update: settingsData
     });
 
     return NextResponse.json(updatedSettings);

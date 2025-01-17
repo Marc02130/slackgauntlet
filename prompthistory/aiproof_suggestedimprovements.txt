@@ -23,3 +23,59 @@
     + 2. What are potential fixes?
     + 3. How to prevent similar issues?
     + Include code examples for the solution."
+    
+
+Version 2:
+Implement [feature] with these constraints:
+1. Dependencies:
+   - List current package versions
+   - Specify compatibility requirements
+2. Implementation Steps:
+   - UI Components and handlers
+   - API endpoints and error handling
+   - Database schema changes
+3. Testing Requirements:
+   - User interaction flows
+   - Error scenarios
+   - Edge cases
+
+Provide complete code for each component including:
+- Event handlers
+- Error handling
+- State management
+- Loading states
+
+
+Debug [issue] considering:
+1. Current Implementation:
+   - Affected files
+   - Package versions
+   - Environment variables
+2. Error Context:
+   - Full error message
+   - Steps to reproduce
+   - Current state
+3. Required Functionality:
+   - Expected behavior
+   - User interactions
+   - Error handling
+
+Provide complete fix including:
+- All necessary file changes
+- Version compatibility checks
+- Testing steps
+
+
+Resolve dependency conflicts for [feature]:
+1. Current Dependencies:
+   - List all related packages
+   - Current versions
+   - Required versions
+2. Implementation Requirements:
+   - Required functionality
+   - Minimum versions needed
+   - Alternative packages
+3. Migration Steps:
+   - Version update order
+   - Breaking changes
+   - Testing requirements

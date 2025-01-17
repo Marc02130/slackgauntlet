@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { embeddingsManager } from "@/lib/embeddings-manager";
 import { responseManager } from "@/lib/response-manager";
 import { NextResponse } from "next/server";
+import { handleMessageSend } from '@/lib/message-middleware';
 
 export async function GET(
   req: Request,
@@ -76,8 +77,16 @@ export async function POST(
     }
 
     const { content, fileUrls } = await req.json();
+    const recipientId = params.userId;
 
-    if (!content?.trim() && (!fileUrls || fileUrls.length === 0)) {
+    // Process message through middleware
+    const processedMessage = await handleMessageSend({
+      content,
+      userId: currentUserId,
+      recipientId
+    });
+
+    if (!processedMessage.content?.trim() && (!fileUrls || fileUrls.length === 0)) {
       return new NextResponse("Message content or files are required", { status: 400 });
     }
 
@@ -94,12 +103,13 @@ export async function POST(
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // Create message first
+    // Create message with files relation
     const message = await db.message.create({
       data: {
-        content: content || '',
+        content: processedMessage.content,
         userId: dbUser.id,
         recipientId: params.userId,
+        isAIResponse: processedMessage.isAIResponse || false,
         files: {
           create: fileUrls?.map((url: string) => ({
             url,
@@ -146,7 +156,7 @@ export async function POST(
 
     if (recipient?.status === 'busy') {
       try {
-        const aiResponse = await responseManager.generateResponse(content, params.userId);
+        const aiResponse = await responseManager.generateResponse(processedMessage.content, params.userId);
         
         if (aiResponse) {
           // Evaluate response

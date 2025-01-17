@@ -7,8 +7,8 @@ export class ResponseManager {
   
   constructor() {
     this.openai = new ChatOpenAI({
-      openAIApiKey: process.env.OPENAI_KEY,
-      modelName: 'o1-mini',
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: process.env.OPENAI_MODEL,
     });
   }
 

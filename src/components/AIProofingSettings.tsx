@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { theme } from '@/lib/theme';
 
 interface AIProofingSettings {
-  proofBeforeSend: boolean;
-  proofAfterSend: boolean;
+  proofingMode: 'after' | 'none';
   autoAcceptChanges: boolean;
   checkGrammar: boolean;
   checkTone: boolean;
@@ -43,8 +42,7 @@ export function AIProofingSettings({
       const data = await response.json();
       console.log('Settings data:', data);
       setSettings({
-        proofBeforeSend: data.proofBeforeSend ?? false,
-        proofAfterSend: data.proofAfterSend ?? false,
+        proofingMode: data.proofingMode ?? 'none',
         autoAcceptChanges: data.autoAcceptChanges ?? false,
         checkGrammar: data.checkGrammar ?? true,
         checkTone: data.checkTone ?? true,
@@ -79,7 +77,11 @@ export function AIProofingSettings({
       const response = await fetch('/api/users/me/proofing-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({
+          ...settings,
+          proofingMode: settings.proofingMode,
+          autoAcceptChanges: settings.autoAcceptChanges,
+        }),
       });
 
       if (!response.ok) {
@@ -90,7 +92,6 @@ export function AIProofingSettings({
       const savedData = await response.json();
       setSavedSettings(settings);
       setIsDirty(false);
-      console.log('Settings saved successfully:', savedData);
       onSaveSuccess?.();
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -109,28 +110,32 @@ export function AIProofingSettings({
       <h2 className="text-lg font-semibold">AI Proofing Settings</h2>
 
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={settings.proofBeforeSend}
-              onChange={(e) => handleChange({ proofBeforeSend: e.target.checked })}
-              className="rounded border-gray-300 text-blue-500 focus:ring-blue-500"
-            />
-            <span>Proof messages before sending</span>
-          </label>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={settings.proofAfterSend}
-              onChange={(e) => handleChange({ proofAfterSend: e.target.checked })}
-              className="rounded border-gray-300"
-            />
-            <span>Proof messages after sending</span>
-          </label>
+        <div className="space-y-2">
+          <h3 className="font-medium">Proofing Mode</h3>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="proofingMode"
+                value="after"
+                checked={settings.proofingMode === 'after'}
+                onChange={() => handleChange({ proofingMode: 'after' })}
+                className="text-blue-500 focus:ring-blue-500"
+              />
+              <span>Proof after sending</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="proofingMode"
+                value="none"
+                checked={settings.proofingMode === 'none'}
+                onChange={() => handleChange({ proofingMode: 'none' })}
+                className="text-blue-500 focus:ring-blue-500"
+              />
+              <span>No proofing</span>
+            </label>
+          </div>
         </div>
 
         <div className="space-y-2">
