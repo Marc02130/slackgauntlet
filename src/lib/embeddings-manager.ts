@@ -1,6 +1,24 @@
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { index } from './pinecone';
 import { db } from './db';
+import { EmbeddingData } from '../types/embeddings';
+
+type MessageType = 'message' | 'response' | 'document';
+
+interface EmbeddingMetadata {
+  userId: string;
+  messageId: string;
+  type: MessageType;
+  username: string;
+  language?: string;
+  threadId?: string;
+  channelId?: string;
+}
+
+interface RelevantContextResult {
+  messages: EmbeddingData[];
+  documents: EmbeddingData[];
+}
 
 export class EmbeddingsManager {
   private embeddings: OpenAIEmbeddings;
@@ -8,27 +26,37 @@ export class EmbeddingsManager {
   constructor() {
     this.embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: process.env.OPENAI_EMBEDDING_MODEL,
+      modelName: "text-embedding-3-large",
       stripNewLines: true,
     });
+  }
+
+  private cleanMessage(message: string): string {
+    // Remove AI tags
+    return message
+      .replace(/\[AI\]\s*/g, '')
+      .replace(/\[AI edited\]\s*/g, '')
+      .trim();
   }
 
   async generateMessageEmbedding(message: string, metadata: {
     userId: string;
     messageId: string;
     username: string;
-    type: 'message' | 'response';
+    type: MessageType;
     language?: string;
     threadId?: string;
     channelId?: string;
   }) {
     try {
-      const embedding = await this.embeddings.embedQuery(message);
+      // Clean the message before generating embedding
+      const cleanedMessage = this.cleanMessage(message);
+      const embedding = await this.embeddings.embedQuery(cleanedMessage);
       
       // Clean metadata by removing undefined/null values
       const cleanMetadata = {
         ...metadata,
-        content: message,
+        content: cleanedMessage, // Store cleaned message in metadata
         timestamp: new Date().toISOString(),
         version: '1.0'
       };
@@ -115,6 +143,125 @@ export class EmbeddingsManager {
 
     // Delete vectors matching the filter
     await index.deleteMany({ filter });
+  }
+
+  async searchSimilarMessages(params: {
+    message: string;
+    avatarId: string;
+    threshold: number;
+    limit: number;
+  }) {
+    const embedding = await this.embeddings.embedQuery(params.message);
+    
+    const results = await index.query({
+      vector: embedding,
+      filter: { avatarId: params.avatarId },
+      topK: params.limit,
+      includeMetadata: true
+    });
+
+    return results.matches
+      .filter(match => (match.score || 0) >= params.threshold)
+      .map(match => ({
+        content: match.metadata?.content || '',
+        score: match.score || 0
+      }));
+  }
+
+  async generateEmbedding(text: string): Promise<number[]> {
+    if (!text) {
+      throw new Error('Text is required for generating embeddings');
+    }
+
+    try {
+      // Clean the text before generating embedding
+      const cleanedText = this.cleanMessage(text);
+      return await this.embeddings.embedQuery(cleanedText);
+    } catch (error) {
+      console.error('Error generating embedding:', error);
+      throw error;
+    }
+  }
+
+  async getRelevantContext({
+    embedding,
+    messages,
+    documents,
+    limit
+  }: {
+    embedding: number[];
+    messages: EmbeddingData[];
+    documents: EmbeddingData[];
+    limit: number;
+  }): Promise<RelevantContextResult> {
+    // Use the parameters to find relevant context
+    const results = await index.query({
+      vector: embedding,
+      topK: limit,
+      includeMetadata: true
+    });
+
+    const relevantMessages: EmbeddingData[] = [];
+    const relevantDocuments: EmbeddingData[] = [];
+
+    results.matches.forEach(match => {
+      if (match.metadata?.type === 'message') {
+        relevantMessages.push({
+          content: String(match.metadata?.content || ''),
+          score: match.score || 0
+        });
+      } else if (match.metadata?.type === 'document') {
+        relevantDocuments.push({
+          content: String(match.metadata?.content || ''),
+          score: match.score || 0
+        });
+      }
+    });
+
+    return {
+      messages: relevantMessages,
+      documents: relevantDocuments
+    };
+  }
+
+  async processAvatarDocument(params: {
+    documentId: string;
+    avatarId: string;
+    content: string;
+    fileUrl: string;
+    mimeType: string;
+  }) {
+    try {
+      const { documentId, avatarId, content, fileUrl, mimeType } = params;
+
+      // Generate embedding for document content
+      const embedding = await this.embeddings.embedQuery(content);
+      
+      // Store in Pinecone with metadata
+      await index.upsert([{
+        id: documentId,
+        values: embedding,
+        metadata: {
+          avatarId,
+          type: 'document',
+          content,
+          fileUrl,
+          mimeType,
+          timestamp: new Date().toISOString()
+        }
+      }]);
+
+      // Update document with vector ID
+      await db.avatarDocument.update({
+        where: { id: documentId },
+        data: { vectorId: documentId }
+      });
+
+      return embedding;
+    } catch (error) {
+      console.error('Error processing avatar document:', error);
+      throw error;
+    }
   }
 }
 

@@ -83,6 +83,7 @@ export async function POST(
     const processedMessage = await handleMessageSend({
       content,
       userId: currentUserId,
+      email: user.emailAddresses[0].emailAddress,
       recipientId
     });
 

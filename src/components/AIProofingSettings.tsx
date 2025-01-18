@@ -32,15 +32,12 @@ export function AIProofingSettings({
 
   const fetchSettings = async () => {
     try {
-      console.log('Fetching AI proofing settings...');
       const response = await fetch('/api/users/me/proofing-settings');
-      console.log('Response status:', response.status);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Failed to fetch settings');
       }
       const data = await response.json();
-      console.log('Settings data:', data);
       setSettings({
         proofingMode: data.proofingMode ?? 'none',
         autoAcceptChanges: data.autoAcceptChanges ?? false,
@@ -52,7 +49,6 @@ export function AIProofingSettings({
         formality: data.formality ?? 5
       });
     } catch (error) {
-      console.error('Error fetching settings:', error);
       setError(error instanceof Error ? error.message : 'Failed to load settings');
     } finally {
       setIsLoading(false);

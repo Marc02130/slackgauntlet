@@ -10,29 +10,30 @@ datasource db {
 }
 
 model User {
-  id             String        @id @default(cuid())
-  username       String        @unique
-  firstName      String?
-  lastName       String?
-  email          String        @unique
-  profilePicture String?
-  status         String?
-  statusMessage   String?      // Custom away message
-  useAIResponse   Boolean      @default(false)  // Whether to use AI or custom message
-  userRole       String        @default("USER")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  channels       ChannelUser[]
-  messages       Message[]     // Messages sent by this user
-  receivedMessages Message[]   @relation("MessageRecipient") // Messages received by this user
-  messageReads   MessageRead[]
+  id                 String              @id @default(cuid())
+  username           String              @unique
+  firstName          String?
+  lastName           String?
+  email              String              @unique
+  profilePicture     String?
+  status             String?
+  statusMessage      String? // Custom away message
+  useAIResponse      Boolean             @default(false) // Whether to use AI or custom message
+  userRole           String              @default("USER")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  channels           ChannelUser[]
+  messages           Message[] // Messages sent by this user
+  receivedMessages   Message[]           @relation("MessageRecipient") // Messages received by this user
+  messageReads       MessageRead[]
   aiProofingSettings AIProofingSettings?
+  avatar             Avatar?
 }
 
 model Channel {
   id        String        @id @default(cuid())
   name      String
-  isPrivate Boolean      @default(false)
+  isPrivate Boolean       @default(false)
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   users     ChannelUser[]
@@ -52,32 +53,34 @@ model ChannelUser {
 
 model Message {
   id        String   @id @default(cuid())
-  content   String
+  content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   files     File[]
-  
+
   // Sender
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
 
   // Optional channel (null for direct messages)
   channel   Channel? @relation(fields: [channelId], references: [id])
   channelId String?
 
   // Optional recipient (null for channel messages)
-  recipient User?    @relation("MessageRecipient", fields: [recipientId], references: [id])
+  recipient   User?   @relation("MessageRecipient", fields: [recipientId], references: [id])
   recipientId String?
 
   // Add these fields for threading
-  parentId    String?   // ID of the parent message (null for top-level messages)
-  parent      Message?  @relation("Replies", fields: [parentId], references: [id])
-  replies     Message[] @relation("Replies")
-  replyCount  Int       @default(0)
+  parentId   String? // ID of the parent message (null for top-level messages)
+  parent     Message?  @relation("Replies", fields: [parentId], references: [id])
+  replies    Message[] @relation("Replies")
+  replyCount Int       @default(0)
 
-  reads     MessageRead[]
+  reads MessageRead[]
 
   isAIResponse Boolean @default(false)
+
+  embedding Json?  // Store the actual embedding
 
   @@index([channelId])
   @@index([recipientId])
@@ -98,7 +101,7 @@ model MessageRead {
   messageId String
   user      User     @relation(fields: [userId], references: [id])
   userId    String
-  channelId String?  // null for direct messages
+  channelId String? // null for direct messages
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -115,14 +118,124 @@ model AIProofingSettings {
   autoAcceptChanges Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  
+
   // Proofing preferences
-  checkGrammar      Boolean  @default(true)
-  checkTone        Boolean  @default(true)
-  checkClarity     Boolean  @default(true)
-  checkSensitivity Boolean  @default(true)
-  
+  checkGrammar     Boolean @default(true)
+  checkTone        Boolean @default(true)
+  checkClarity     Boolean @default(true)
+  checkSensitivity Boolean @default(true)
+
   // Tone preferences
-  preferredTone    String?  // e.g., "professional", "casual", "friendly"
-  formality       Int      @default(5) // Scale of 1-10
-} 
+  preferredTone String? // e.g., "professional", "casual", "friendly"
+  formality     Int     @default(5) // Scale of 1-10
+}
+
+model Avatar {
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String   @unique
+  name         String
+  description  String?
+  personality  String   @default("helpful")
+  isActive     Boolean  @default(true)
+  contextLimit Int      @default(10)
+  temperature  Float    @default(0.7)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Avatar's knowledge base
+  documents     AvatarDocument[]
+  conversations AvatarConversation[]
+
+  // Avatar settings
+  settings    Json? // Stores flexible configuration
+  performance AvatarPerformance[]
+  metrics     AvatarMetrics[]
+
+  // Add the missing relation
+  analytics AvatarAnalytics[]
+}
+
+model AvatarDocument {
+  id        String   @id @default(cuid())
+  avatar    Avatar   @relation(fields: [avatarId], references: [id], onDelete: Cascade)
+  avatarId  String
+  name      String
+  content   String   @db.Text
+  fileUrl   String?
+  mimeType  String
+  vectorId  String // Reference to Pinecone vector
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  embedding Json?  // Store the actual embedding
+
+  @@index([avatarId])
+}
+
+model AvatarConversation {
+  id        String   @id @default(cuid())
+  avatar    Avatar   @relation(fields: [avatarId], references: [id])
+  avatarId  String
+  userId    String // User interacting with avatar
+  messageId String // Reference to original message
+  response  String   @db.Text
+  context   Json // Stores relevant context used
+  createdAt DateTime @default(now())
+
+  // Add fields for memory
+  embedding       Json? // Store message embedding for similarity search
+  relevanceScore  Float? // Store relevance score for context retrieval
+  isMemoryContext Boolean @default(false) // Flag if used as memory context
+
+  @@index([avatarId, userId])
+  @@index([avatarId, isMemoryContext])
+}
+
+model UserAction {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  createdAt DateTime @default(now())
+
+  @@index([userId, action, createdAt])
+}
+
+model AvatarPerformance {
+  id         String   @id @default(cuid())
+  avatar     Avatar   @relation(fields: [avatarId], references: [id], onDelete: Cascade)
+  avatarId   String
+  latencyMs  BigInt
+  tokensUsed Int
+  cacheHit   Boolean
+  status     String
+  errorType  String?
+  timestamp  DateTime
+
+  @@index([avatarId, timestamp])
+}
+
+model AvatarMetrics {
+  id             String   @id @default(cuid())
+  avatar         Avatar   @relation(fields: [avatarId], references: [id], onDelete: Cascade)
+  avatarId       String
+  userId         String
+  messageLength  Int
+  responseLength Int
+  timestamp      DateTime
+
+  @@index([avatarId, timestamp])
+}
+
+model AvatarAnalytics {
+  id        String   @id @default(cuid())
+  avatar    Avatar   @relation(fields: [avatarId], references: [id], onDelete: Cascade)
+  avatarId  String
+  userId    String
+  timestamp DateTime
+  eventType String
+  metadata  Json
+
+  @@index([avatarId, timestamp])
+  @@index([avatarId, eventType])
+  @@index([userId, timestamp])
+}

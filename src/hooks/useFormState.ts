@@ -19,6 +19,7 @@ export function useFormState<T>(initialState: T) {
 
   return {
     data,
+    setData,
     isDirty,
     isSaving,
     error,

@@ -23,7 +23,9 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": [],
+    "target": "es2015"
   },
   "include": [
     "next-env.d.ts",

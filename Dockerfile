@@ -28,13 +28,6 @@ RUN npx prisma generate
 # Copy the rest of the application
 COPY . .
 
-# Build the application
-RUN npm run build
-
-# Set up the standalone build
-RUN cp -r .next/static .next/standalone/.next/static && \
-    cp -r public .next/standalone/public
-
 # Create startup script
 RUN echo '#!/bin/sh\n\
 echo "Waiting for database..."\n\

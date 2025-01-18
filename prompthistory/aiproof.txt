@@ -267,10 +267,14 @@ Reverted to checkpoint for PineconeArgumentError
 the ai proof read button is visible when "Don't proof messages" or "Proof messages after sending" is selected, it should not be visible.
 Composer - Let me help fix the visibility logic for the AI proof read button. We need to update the MessageInput component to only show the button when "Proof messages before sending" is selected.
 
+
+did you work at labanswer?
+
 There is an error. 
-    1. What is the root cause?
-    2. What are potential fixes?
-    3. Adding to logging to help debug
+
+A. What is the root cause?
+B. What are potential fixes?
+C. How to prevent similar issues?
 Composer -
 
 
@@ -281,4 +285,7 @@ Composer -
     
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
     
-    <button type="button" class="p-2 text-gray-500 hover:text-gray-700 flex-shrink-0 transition-colors" title="AI Proofread"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg></button>
+    <button type="button" class="p-2 text-gray-500 hover:text-gray-700 
+    flex-shrink-0 transition-colors" title="AI Proofread"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot "><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg></button>
+
+there is an error when a user.created test is run from the clerk website, ngrok displays the error "14:50:08.573 EST POST /api/webhooks/clerk       400 Bad Request".

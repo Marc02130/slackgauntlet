@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Home, Plus, Hash, MessageSquare, MessageCircle, User, Circle } from 'lucide-react';
+import { Home, Plus, Hash, MessageSquare, MessageCircle, User, Circle, Settings, Bot } from 'lucide-react';
 import { useAuth } from '@clerk/nextjs';
 import { UserSelectDialog } from './UserSelectDialog';
 import { ChannelCreateDialog } from './ChannelCreateDialog';
@@ -22,6 +22,12 @@ interface DirectMessageUser {
   status?: string | null;
 }
 
+interface Avatar {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 export const Sidebar = () => {
   const { userId } = useAuth();
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -38,6 +44,8 @@ export const Sidebar = () => {
   } | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [dmUnreadCounts, setDmUnreadCounts] = useState<Record<string, number>>({});
+  const [avatars, setAvatars] = useState<Avatar[]>([]);
+  const [hoveredAvatar, setHoveredAvatar] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -157,9 +165,24 @@ export const Sidebar = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchAvatars = async () => {
+      try {
+        const response = await fetch('/api/avatars');
+        if (!response.ok) throw new Error('Failed to fetch avatars');
+        const data = await response.json();
+        setAvatars(data);
+      } catch (error) {
+        console.error('Error fetching avatars:', error);
+      }
+    };
+
+    fetchAvatars();
+  }, []);
+
   return (
     <>
-      <div className="w-64 bg-gray-800 text-white h-full flex flex-col">
+      <div className="w-64 bg-gray-800 text-white flex flex-col h-[calc(100vh-3.5rem)]">
         {/* Updated Home Section */}
         <div className="p-4 border-b border-gray-700">
           <Link 
@@ -185,7 +208,21 @@ export const Sidebar = () => {
               </ErrorBoundary>
             </div>
           </div>
+          {/* Add Avatar Settings link */}
+          <Link 
+            href="/avatar/settings"
+            className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+          >
+            <Settings size={20} />
+            <span>Avatar Settings</span>
+          </Link>
         </div>
+
+        {error && (
+          <div className="p-4 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Add this section before the Channels section */}
         <div className="p-4">
@@ -237,17 +274,11 @@ export const Sidebar = () => {
         </div>
 
         {/* Direct Messages Section */}
-        <div className="p-4 border-t border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Direct Messages</h2>
-            <button 
-              onClick={() => setIsUserSelectOpen(true)} 
-              className="p-1 hover:bg-gray-700 rounded"
-            >
-              <Plus size={20} />
-            </button>
+        <div className="flex-shrink-0">
+          <div className="px-4 py-2">
+            <h2 className="font-semibold text-sm">Direct Messages</h2>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 px-2">
             {isLoading ? (
               <div className="text-gray-400">Loading messages...</div>
             ) : directMessageUsers.length > 0 ? (
@@ -291,11 +322,40 @@ export const Sidebar = () => {
           </div>
         </div>
 
-        {error && (
-          <div className="p-4 text-red-400 text-sm">
-            {error}
+        {/* Divider */}
+        <div className="border-t border-gray-700 my-2"></div>
+
+        {/* User Avatars section */}
+        <div className="flex-shrink-0">
+          <div className="px-4 py-2">
+            <h2 className="font-semibold text-sm">User Avatars</h2>
           </div>
-        )}
+          <div className="space-y-1 px-2">
+            {avatars.map(avatar => (
+              <div key={avatar.id} className="relative">
+                <Link
+                  href={`/avatars/${avatar.id}`}
+                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700"
+                  onMouseEnter={() => setHoveredAvatar(avatar.id)}
+                  onMouseLeave={() => setHoveredAvatar(null)}
+                >
+                  <Bot size={16} />
+                  <span className="truncate">{avatar.name}</span>
+                </Link>
+                {hoveredAvatar === avatar.id && avatar.description && (
+                  <div className="absolute left-full ml-2 z-50 p-2 bg-gray-900 rounded shadow-lg text-sm max-w-xs">
+                    {avatar.description}
+                  </div>
+                )}
+              </div>
+            ))}
+            {avatars.length === 0 && (
+              <div className="px-2 py-1 text-sm text-gray-400">
+                No avatars yet
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <ChannelCreateDialog 

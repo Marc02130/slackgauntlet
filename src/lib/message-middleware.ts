@@ -1,7 +1,9 @@
 import { db } from './db';
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { auth, currentUser } from "@clerk/nextjs";
+import { OpenAIEmbeddings } from '@langchain/openai';
+import { index } from './pinecone';
+import { logger } from './utils/logger';
 
 const openai = new ChatOpenAI({
   modelName: process.env.OPENAI_MODEL,
@@ -9,76 +11,105 @@ const openai = new ChatOpenAI({
   openAIApiKey: process.env.OPENAI_API_KEY,
 });
 
-const proofreadPrompt = PromptTemplate.fromTemplate(`
-You are a helpful message proofreader. Review and improve this message while maintaining its meaning and tone:
+const embeddings = new OpenAIEmbeddings({
+  modelName: process.env.OPENAI_EMBEDDING_MODEL,
+});
 
-Message: {message}
+const proofreadPrompt = PromptTemplate.fromTemplate(`
+You are a helpful message proofreader. Review and improve this message while maintaining the user's writing style.
+
+Previous messages from this user for style reference:
+{context}
+
+Message to improve: {message}
+
+Writing style guidance:
+{userStyle}
+
+Improve the message while:
+1. Maintaining the user's vocabulary and tone
+2. Preserving message intent and meaning
+3. Fixing any grammar or clarity issues
+4. Keeping the same level of formality
 
 Provide only the improved message without any explanations.
 `);
 
-export async function handleMessageSend(message: {
+interface MessageResponse {
   content: string;
   userId: string;
   channelId?: string;
   recipientId?: string;
-}) {
-  console.log('Message middleware called:', message);
+  isAIResponse: boolean;
+}
 
+export async function handleMessageSend(message: {
+  content: string;
+  userId: string;
+  email: string;
+  channelId?: string;
+  recipientId?: string;
+}): Promise<MessageResponse> {
   try {
-    // Get user from Clerk
-    const user = await currentUser();
-    if (!user) {
-      console.log('No user found in Clerk');
-      return message;
-    }
-
-    // Find database user by email
-    const dbUser = await db.user.findFirst({
-      where: {
-        email: user.emailAddresses[0].emailAddress
-      }
+    logger.info('MessageMiddleware', 'Processing message', { 
+      userId: message.userId,
+      email: message.email,
+      channelId: message.channelId,
+      recipientId: message.recipientId 
     });
 
-    if (!dbUser) {
-      console.log('No database user found');
-      return message;
-    }
-
-    // Check user's proofing settings using database userId
-    const settings = await db.aIProofingSettings.findUnique({
-      where: { userId: dbUser.id }
+    const dbUser = await db.user.findUnique({
+      where: { email: message.email },
+      include: { aiProofingSettings: true }
     });
 
-    console.log('User proofing settings:', settings);
+    logger.info('User lookup result', JSON.stringify({
+      email: message.email,
+      found: !!dbUser,
+      hasSettings: !!dbUser?.aiProofingSettings
+    }));
 
-    if (!settings || settings.proofingMode !== 'after') {
-      console.log('Proofing skipped - disabled or not set to after');
-      return message;
+    if (!(dbUser?.aiProofingSettings?.proofingMode === 'after')) {
+      logger.info('MessageMiddleware', 'Proofing disabled, returning original message');
+      return { ...message, isAIResponse: false };
     }
 
-    console.log('Starting message proofing');
-    
+    logger.info('MessageMiddleware', 'Finding similar messages for context');
+    const embedding = await embeddings.embedQuery(message.content);
+    const similar = await index.query({
+      vector: embedding,
+      topK: 5,
+      filter: {
+        userId: message.userId,
+        ...(message.channelId ? { channelId: message.channelId } : { recipientId: message.recipientId })
+      },
+      includeMetadata: true
+    });
+
+    // Build context from similar messages
+    const context = similar.matches
+      .map(m => m.metadata.content)
+      .join('\n');
+
     const formattedPrompt = await proofreadPrompt.format({
-      message: message.content
+      message: message.content,
+      context,
+      userStyle: "Based on the context messages, maintain the user's writing style."
     });
 
     const response = await openai.invoke(formattedPrompt);
-    const improved = String(response.content);
-
-    console.log('Proofing completed:', {
-      original: message.content,
-      improved
+    logger.info('MessageMiddleware', 'Message processed successfully', {
+      isModified: response.content !== message.content
     });
 
-    // Return message with improved content, prefix and isAIResponse flag
     return {
       ...message,
-      content: `[AI edited] ${improved}`,
+      content: `[AI edited] ${response.content}`,
       isAIResponse: true
     };
+
   } catch (error) {
-    console.error('Auto-proofing error:', error);
-    return message;
+    logger.error('MessageMiddleware', error);
+    return { ...message, isAIResponse: false };
   }
 } 

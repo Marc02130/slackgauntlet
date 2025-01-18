@@ -47,6 +47,15 @@ export function MessageList({ channelId }: MessageListProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [filteredMessages, setFilteredMessages] = useState<Message[]>([]);
   const searchRef = useRef<ChannelSearchRef>(null);
+  const [selectedThread, setSelectedThread] = useState<{
+    id: string;
+    content: string;
+    createdAt: string;
+    user: {
+      username: string;
+      profilePicture?: string | null;
+    };
+  } | null>(null);
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -236,6 +245,22 @@ export function MessageList({ channelId }: MessageListProps) {
     );
   };
 
+  const handleThreadClick = (message: {
+    id: string;
+    content: string;
+    createdAt: string;
+    user: {
+      username: string;
+      profilePicture?: string | null;
+    };
+  }) => {
+    setSelectedThread(message);
+  };
+
+  const handleThreadClose = () => {
+    setSelectedThread(null);
+  };
+
   if (error) {
     return (
       <div className="flex-1 p-4 text-red-500">
@@ -306,11 +331,8 @@ export function MessageList({ channelId }: MessageListProps) {
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                       <button
-                        onClick={() => {
-                          setSelectedMessage(message);
-                          setIsThreadOpen(true);
-                        }}
-                        className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                        onClick={() => handleThreadClick(message)}
+                        className="text-gray-500 hover:text-gray-700"
                       >
                         <MessageCircle size={16} />
                         {message.replyCount > 0 && (
@@ -361,11 +383,8 @@ export function MessageList({ channelId }: MessageListProps) {
                   </div>
                   <div className="flex items-center gap-2 mt-2">
                     <button
-                      onClick={() => {
-                        setSelectedMessage(message);
-                        setIsThreadOpen(true);
-                      }}
-                      className="text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                      onClick={() => handleThreadClick(message)}
+                      className="text-gray-500 hover:text-gray-700"
                     >
                       <MessageCircle size={16} />
                       {message.replyCount > 0 && (
@@ -383,6 +402,21 @@ export function MessageList({ channelId }: MessageListProps) {
           <div ref={messagesEndRef} />
         </div>
       </div>
+
+      {selectedThread && (
+        <MessageThread
+          isOpen={true}
+          onClose={handleThreadClose}
+          parentMessage={{
+            id: selectedThread.id,
+            content: selectedThread.content,
+            createdAt: selectedThread.createdAt,
+            channelId: channelId,
+            user: selectedThread.user
+          }}
+          channelId={channelId}
+        />
+      )}
     </div>
   );
 } 

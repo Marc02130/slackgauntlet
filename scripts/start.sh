@@ -26,6 +26,7 @@ mkdir -p build_context/prisma
 cp prisma/schema.prisma build_context/prisma/
 cp Dockerfile build_context/
 cp .env.local build_context/
+cp .env build_context/
 cp -r src build_context/
 cp -r public build_context/ 2>/dev/null || :
 cp next.config.js build_context/ 2>/dev/null || :
